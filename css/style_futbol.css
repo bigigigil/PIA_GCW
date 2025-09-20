@@ -11,7 +11,7 @@ canvas {
   display: block;
 }
 
-.Usuario {
+.Puntaje {
   position: fixed;       /* se mantiene fijo en pantalla */
   right: 20px;           /* pegado al lado derecho */
   top: 20%;              /* lo bajas un poco para que quede centrado */
@@ -27,12 +27,12 @@ canvas {
   animation: slideInRight 0.5s ease; /* animación opcional */
 }
 
-.Usuario .info h1 {
+.Puntaje .info h1 {
   font-size: 24px;
   color: var(--azul);
 }
 
-.Usuario .info h2 {
+.Puntaje .info h2 {
   font-size: 18px;
   color: var(--azul);
   margin: 5px 0;
@@ -52,13 +52,12 @@ canvas {
 
 
 
-.casaContainer {
+.canchaContainer {
   height: 100%;
   width: 100%;
 
   /* 2 capas fijas: primero la imagen, después el gradiente */
   background-image: 
-    url("images/fondos/fondo_casa.png"),
     linear-gradient(to bottom, #87CEFA, #1E90FF);
   background-repeat: no-repeat, no-repeat;
   background-size: cover, cover;
@@ -71,17 +70,14 @@ canvas {
 @keyframes skyAnim {
   0% {
     background-image:
-      url("images/fondos/fondo_casa.png"),
       linear-gradient( to bottom, #00609c,#004f9e); 
   }
   50% {
     background-image:
-      url("images/fondos/fondo_casa.png"),
       linear-gradient(to bottom, #00609c, #004f9e79); 
   }
   100% {
     background-image:
-      url("images/fondos/fondo_casa.png"),
       linear-gradient(to bottom, #00609c, #004f9e00); 
   }
 }

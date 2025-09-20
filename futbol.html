@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> ᯓ⚽︎ | Hama-tón.ᐟ</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cherry+Bomb+One&display=swap" rel="stylesheet">
+
+    <!--<link rel="stylesheet" href="style.css">-->
+    <link rel="stylesheet" href="css/style_controles.css">
+    <link rel="stylesheet" href="css/style_modal.css">
+    <link rel="stylesheet" href="css/style_futbol.css">
+</head>
+
+<body>
+
+    <div class="controles">
+        <button class="btn-icon pause-btn" id="pauseBtn">
+            ( ⏸ )
+            <span class="btn-text">PAUSA</span>
+        </button>
+
+        <button class="btn-icon ajustes-btn" id="ajustesBtn">
+            (⚙️)
+            <span class="btn-text">AJUSTES</span>
+        </button>
+    </div>
+
+    <div class="Puntaje">
+        <div class="info">
+            <h1>* roxanna *</h1>
+            <br>
+            <h2>OPORTUNIDADES: 4/5</h2>
+            <h2>SEMILLAS: 5</h2>
+        </div>
+    </div>
+
+    <div class="modal-pausa" id="modalPausa">
+        <div class="modal-contenido">
+            <button class="cerrar-modal" id="cerrarModalPausa">✕</button>
+            <h2 class="modal-titulo">JUEGO EN PAUSA</h2>
+            <div class="modal-opciones">
+                <button class="modal-boton" id="continuarBtn">Continuar</button>
+                <button class="modal-boton" id="salirBtn">Salir del Juego</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal-ajustes" id="modalAjustes">
+        <div class="modal-contenidoAjustes">
+            <button class="cerrar-modal" id="cerrarModalAjustes">✕</button>
+            <h2 class="modal-titulo">AJUSTES</h2>
+            <div class="modal-opciones">
+                <label><input type="checkbox" id="toggleVolumen" checked> Volumen</label>
+                <label><input type="checkbox" id="toggleMusica" checked> Música</label>
+                <label>Brillo <input type="range" id="brilloRange" min="0" max="2" step="0.1" value="1"></label>
+            </div>
+        </div>
+    </div>
+
+    <div class="canchaContainer">
+        <!-- Three.js se renderizará aquí -->
+    </div>
+
+    <!-- Importación de Three.js desde CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+
+    <script>
+        // --- escena, cámara y render ---
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000000, 0); // Fondo transparente
+        document.querySelector('.canchaContainer').appendChild(renderer.domElement);
+
+        camera.position.set(0, 7, 5); // arriba y atrás
+        camera.lookAt(0, 0, 0);         // siempre al centro de la cancha
+
+
+        // luces
+
+        const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        keyLight.position.set(20, 20, 20);
+        scene.add(keyLight);
+
+        const fillLight = new THREE.DirectionalLight(0xffffff, 1);
+        fillLight.position.set(-20, 10, 10);
+        scene.add(fillLight);
+
+        // suelo textura
+        // Cargar textura
+        const textureLoader = new THREE.TextureLoader();
+        const floorTexture = textureLoader.load('./models/textures/cancha.png');
+        // Para que se repita muchas veces en el plano
+        floorTexture.wrapS = THREE.RepeatWrapping;
+        floorTexture.wrapT = THREE.RepeatWrapping;
+        floorTexture.repeat.set(1, 1); // cantidad de repeticiones (ajusta a gusto)
+
+        // Piso (un plano grande que hace de suelo)
+        const floorGeometry = new THREE.PlaneGeometry(40, 20); // tamaño grande
+        const floorMaterial = new THREE.MeshStandardMaterial({
+            map: floorTexture,
+            //color: 0xffa31a,
+            roughness: 10,
+            metalness: 0,
+        });
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = (-Math.PI / 2); // -90° plano
+
+        floor.rotation.z = 0; // ponerlo plano en el eje XZ (inclinacion)
+        floor.position.z = 0;
+        floor.position.y = -1; // un poquito más abajo que el hamster
+        scene.add(floor);
+
+
+        /* CARGAR MODELoS 1/2*/
+        // declar global modelos
+        let hamster;
+        let pelota;
+
+        function loadModel(objPath, mtlPath, options = {}, onLoad) {
+            const mtlLoader = new THREE.MTLLoader();
+            mtlLoader.load(mtlPath, (materials) => {
+                materials.preload();
+
+                const objLoader = new THREE.OBJLoader();
+                objLoader.setMaterials(materials);
+                objLoader.load(objPath, (obj) => {
+                    // aplicar opciones
+                    if (options.scale) obj.scale.set(...options.scale);
+                    if (options.position) obj.position.set(...options.position);
+                    if (options.rotation) obj.rotation.set(...options.rotation);
+
+                    // asegurar materiales simples
+                    obj.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material = new THREE.MeshBasicMaterial({
+                                map: child.material.map,
+                            });
+                        }
+                    });
+
+                    scene.add(obj);
+
+                    if (onLoad) onLoad(obj); // callback por si quieres guardarlo
+                });
+            });
+        }
+
+        /* CARGAR MODELoS 2/2*/
+
+        loadModel('./models/hamster.obj', './models/hamster.mtl', {
+            scale: [5, 5, 5],
+            position: [0, 0, 0],
+            rotation: [-0.5, 0, 0],
+        }, (obj) => { hamster = obj; });
+
+
+        loadModel('./models/futbol/pelota.obj', './models/futbol/pelota.mtl', {
+            scale: [1, 1, 1],
+            position: [0, -0.5, 5],
+            rotation: [0.01, 0, 0],
+        }, (obj) => { pelota = obj; });
+
+
+        // pelota
+
+
+        const ballSpeed = 0.05;    // velocidad de persecución
+        const floorY = -0.5;       // altura del suelo
+        const ballRadius = 2.5;    // radio aproximado de la pelota
+        /* configurar teclas*/
+        document.addEventListener('keydown', (event) => {
+            if (!hamster) return;
+
+            const speed = 1; // velocidad de movimiento
+            const turnSpeed = 0.5; // velocidad de rotación
+
+            switch (event.key) {
+                // Rotar a izquierda/derecha
+                case 'ArrowLeft':
+                    hamster.rotation.y += turnSpeed;
+                    break;
+                case 'ArrowRight':
+                    hamster.rotation.y -= turnSpeed;
+                    break;
+                case 'ArrowUp':
+                    hamster.rotation.y = -9.4;
+                    break;
+
+                case 'ArrowDown': hamster.rotation.y = 0; break;
+                // Avanzar/retroceder según su frente
+                case 'w':
+                    hamster.position.x += Math.sin(hamster.rotation.y) * speed;
+                    hamster.position.z += Math.cos(hamster.rotation.y) * speed;
+                    break;
+                case 's':
+                    hamster.position.x -= Math.sin(hamster.rotation.y) * speed;
+                    hamster.position.z -= Math.cos(hamster.rotation.y) * speed;
+                    break;
+
+                // Strafe (opcional) 
+                case 'a':
+                    hamster.position.x += Math.cos(hamster.rotation.y) * speed;
+                    hamster.position.z -= Math.sin(hamster.rotation.y) * speed;
+                    break;
+                case 'd':
+                    hamster.position.x -= Math.cos(hamster.rotation.y) * speed;
+                    hamster.position.z += Math.sin(hamster.rotation.y) * speed;
+                    break;
+            }
+        });
+
+        // animación
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (hamster && pelota) {
+                const dx = hamster.position.x - pelota.position.x;
+                const dz = hamster.position.z - pelota.position.z;
+                const distance = Math.sqrt(dx * dx + dz * dz);
+
+                if (distance > 0.1) {
+                    const dirX = dx / distance;
+                    const dirZ = dz / distance;
+
+                    // vector de movimiento
+                    const moveX = dirX * ballSpeed;
+                    const moveZ = dirZ * ballSpeed;
+
+                    // mover pelota
+                    pelota.position.x += moveX;
+                    pelota.position.z += moveZ;
+                    pelota.position.y = floorY;
+
+                    // calcular ángulo de rodado
+                    const moveDistance = Math.sqrt(moveX * moveX + moveZ * moveZ);
+                    const angle = moveDistance / ballRadius;
+
+                    // eje de rotación = dirección × (0,1,0)
+                    const moveVector = new THREE.Vector3(moveX, 0, moveZ).normalize();
+                    const up = new THREE.Vector3(0, 1, 0);
+                    const rotationAxis = new THREE.Vector3().crossVectors(up, moveVector).normalize();
+
+                    // aplicar rotación
+                    pelota.rotateOnAxis(rotationAxis, angle);
+                }
+
+                // detección de colisión
+                if (distance < 1.5) {
+                    console.log("⚠️ ¡El hámster fue arrollado por la pelota!");
+                }
+
+                // mantener al hamster en el suelo
+                hamster.position.y = floorY;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // ajuste al redimensionar
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+
+    </script>
+
+    <script src="javaScript/controles.js"></script>
+
+</body>
+
+</html>
