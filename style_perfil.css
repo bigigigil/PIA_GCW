@@ -1,0 +1,119 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  font-family: "Cherry Bomb One", system-ui;
+  background-color: #ffdea8; /* mismo amarillito */
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* Contenedor principal (centrado) */
+.perfil {
+  flex: 1; /* ocupa todo el espacio disponible */
+  display: flex;
+  justify-content: center; /* centrado horizontal */
+  align-items: center;     /* centrado vertical */
+}
+
+.Nuevo_Usuario {
+  background-color: var(--amarillito);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+}
+/* Caja de perfil */
+.perfil-container {
+  background-color: #ffdea8;
+  border-radius: 20px;
+  padding: 30px;
+  height: 90%;
+  width: 800px;
+  box-shadow: -15px 15px 0px #82ddb2;
+  border: 10px solid #173034;
+  text-align: center;
+}
+
+/* Título */
+.perfil-container h1 {
+  color: #173034;
+  background-color: #0098c2;
+  border-radius: 15px;
+  padding: 10px;
+}
+
+/* Info de usuario */
+.perfil-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  margin: 20px 0;
+}
+
+.perfil-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 5px dashed #173034;
+}
+
+.perfil-datos p {
+  color: #173034;
+  margin: 5px 0;
+  font-size: 20px;
+  text-align: left;
+}
+
+/* Lista de amigos */
+.perfil-amigos {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.perfil-amigos h2 {
+  color: #173034;
+  margin-bottom: 10px;
+}
+
+.perfil-amigos ul {
+  list-style: none;
+  padding: 0;
+}
+
+.perfil-amigos li {
+  background: #82ddb2;
+  margin: 5px 0;
+  padding: 8px;
+  border-radius: 10px;
+  color: #173034;
+  font-size: 18px;
+}
+
+/* Botones */
+.perfil-botones {
+  margin-top: 30px;
+}
+
+.perfil-botones button {
+  display: inline-block;
+  padding: 12px 20px;
+  margin: 10px;
+  background-color: #0098c2;
+  color: #173034;
+  font-family: "Cherry Bomb One", system-ui;
+  border-radius: 50px;
+  border: 5px solid #173034;
+  font-size: 18px;
+  transition: 0.3s ease;
+  cursor: pointer;
+}
+
+.perfil-botones button:hover {
+  background: #fcb036;
+}

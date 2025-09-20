@@ -1,0 +1,77 @@
+.btn-icon {
+  position: fixed;
+  left: 20px;
+ 
+  color: #173034;
+   border: 5px solid var(--azul);
+  border-radius: 50px;
+  font-family: "Cherry Bomb One", system-ui;
+  font-size: 30px;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.5s ease;
+  z-index: 1000;   
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px; /* espacio entre icono y texto */
+  overflow: hidden;
+}
+
+/* Posición de los botones uno debajo del otro */
+.pause-btn { 
+   background: #0098c2;
+  top: 40%; }
+.ajustes-btn { 
+   background: #82ddb2;
+  top: 55%; }
+
+/* Texto oculto por defecto */
+.btn-icon .btn-text {
+  opacity: 0;
+  max-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: all 0.5s ease;
+  font-size: 24px;
+}
+
+/* Al hacer hover, se muestra el texto */
+.btn-icon:hover .btn-text {
+  opacity: 1;
+  max-width: 200px; /* ancho suficiente para mostrar el texto */
+}
+
+/* Efecto hover sobre el botón */
+.btn-icon:hover {
+  background: #fcb036;
+}
+
+.pause-btn {
+  position: fixed;
+  left: 20px;       
+  top: 40%;         
+}
+
+.volume-btn {
+  position: fixed;
+  left: 20px;       
+  top: 55%;       
+}
+
+
+
+
+
+
+/*Colores*/
+
+
+:root {
+  --amarillito: #ffdea8;
+  --amarillo: #fcb036;
+  --azulito: #0098c2;
+  --azul: #173034;
+  --aqua: #82ddb2;
+
+}

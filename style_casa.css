@@ -1,0 +1,97 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+canvas {
+  display: block;
+}
+
+.Usuario {
+  position: fixed;       /* se mantiene fijo en pantalla */
+  right: 20px;           /* pegado al lado derecho */
+  top: 20%;              /* lo bajas un poco para que quede centrado */
+  background-color: var(--amarillito);
+  border: 5px solid var(--azul);
+  border-radius: 20px;
+  padding: 20px;
+  width: 220px;          /* ancho fijo */
+  z-index: 1500;         /* encima de la escena pero debajo de los modales */
+  box-shadow: -10px 10px 0px var(--azul);
+  font-family: "Cherry Bomb One", system-ui;
+  text-align: center;
+  animation: slideInRight 0.5s ease; /* animación opcional */
+}
+
+.Usuario .info h1 {
+  font-size: 24px;
+  color: var(--azul);
+}
+
+.Usuario .info h2 {
+  font-size: 18px;
+  color: var(--azul);
+  margin: 5px 0;
+}
+
+/* Animación de entrada desde la derecha */
+@keyframes slideInRight {
+  from {
+    transform: translateX(150%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+
+
+.casaContainer {
+  height: 100%;
+  width: 100%;
+
+  /* 2 capas fijas: primero la imagen, después el gradiente */
+  background-image: 
+    url("images/fondos/fondo_casa.png"),
+    linear-gradient(to bottom, #87CEFA, #1E90FF);
+  background-repeat: no-repeat, no-repeat;
+  background-size: cover, cover;
+
+
+  /* animamos solo el gradiente (2ª capa) */
+  animation: skyAnim 30s infinite alternate ease-in-out;
+}
+
+@keyframes skyAnim {
+  0% {
+    background-image:
+      url("images/fondos/fondo_casa.png"),
+      linear-gradient( to bottom, #00609c,#004f9e); 
+  }
+  50% {
+    background-image:
+      url("images/fondos/fondo_casa.png"),
+      linear-gradient(to bottom, #00609c, #004f9e79); 
+  }
+  100% {
+    background-image:
+      url("images/fondos/fondo_casa.png"),
+      linear-gradient(to bottom, #00609c, #004f9e00); 
+  }
+}
+
+
+    :root {
+  --amarillito: #ffdea8;
+  --amarillo: #fcb036;
+  --azulito: #0098c2;
+  --azul: #173034;
+  --aqua: #82ddb2;
+
+}

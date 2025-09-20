@@ -1,0 +1,143 @@
+/* === ESTILOS DEL MODAL DE PAUSA === */
+    .modal-pausa,.modal-ajustes {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(23, 48, 52, 0.507);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s ease;
+      font-family: "Cherry Bomb One", system-ui;
+      font-size: 25px;
+    }
+    
+    .modal-contenido {
+      background-color: var(--azulito);
+      border-radius: 20px;
+      padding: 30px;
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+      box-shadow: -15px 15px 0px var(--azul);
+      animation: slideIn 0.4s ease;
+      position: relative;
+      border: 10px solid var(--azul);
+    }
+
+    .modal-contenidoAjustes {
+      background-color: var(--aqua);
+      border-radius: 20px;
+      padding: 30px;
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+      box-shadow: -15px 15px 0px var(--azul);
+      animation: slideIn 0.4s ease;
+      position: relative;
+      border: 10px solid var(--azul);
+    }
+    
+    .modal-titulo {
+      margin-bottom: 25px;
+      color: #173034;
+      font-size: 2.5rem;
+      text-shadow: 2px 2px 0 #ffe9c5;
+    }
+    
+    .modal-opciones {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .modal-boton {
+      background: #ffe9c5;
+      border: none;
+      border-radius: 50px;
+      padding: 15px;
+      color: #173034;
+      font-family: "Cherry Bomb One", system-ui;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 0 #fcb036;
+    }
+    
+   
+    .modal-boton:hover {
+      background: #fcb036;
+      transform: translateY(2px);
+      box-shadow: 0 3px 0 #e69c2a;
+    }
+    /* Estilo específico para el último botón (Salir del Juego) */
+.modal-boton:last-child {
+  background: #ffe9c5;
+  box-shadow: 0 5px 0 #ff6b6b;
+}
+
+.modal-boton:last-child:hover {
+  background: #ff6b6b;
+  box-shadow: 0 3px 0 #e55656;
+}
+
+.modal-boton:last-child:active {
+  box-shadow: 0 1px 0 #e55656;
+}
+    
+
+    .modal-boton:active {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 #e69c2a;
+    }
+    
+    .cerrar-modal {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: #ffe9c5;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      color: #173034;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 3px 0 #fcb036;
+    }
+    
+    .cerrar-modal:hover {
+      background: #fcb036;
+      transform: rotate(90deg);
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes slideIn {
+      from { 
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+      }
+      to { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    :root {
+  --amarillito: #ffdea8;
+  --amarillo: #fcb036;
+  --azulito: #0098c2;
+  --azul: #173034;
+  --aqua: #82ddb2;
+
+}
+
+

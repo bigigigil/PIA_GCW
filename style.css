@@ -1,0 +1,135 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+canvas {
+  display: block;
+}
+
+/*  =====  INICIO  ======  */
+.Inicio {
+  background-color: #ffdea8;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* Logo arriba, botones abajo */
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  /* espacio entre logo y botones */
+}
+
+.Inicio img {
+  max-width:55%;
+  height: auto;
+   margin-top: -15%;
+}
+
+.botones {
+  display: flex;
+  margin-top: -5%;
+  gap: 35px;
+
+  /* espacio entre los botones */
+}
+
+.botones a {
+  display: inline-block;
+  padding: 12px 30px;
+    background-color: #fcb036;
+  color: #173034;
+  font-family: "Cherry Bomb One", system-ui;
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 9px #173034;
+  text-decoration: none;
+  font-size: 45px;
+  font-weight: normal;
+  transition: 0.3s ease;
+}
+
+.botones a:first-child {
+  background-color: #82ddb2;
+}
+
+
+.botones a:last-child {
+  background-color: #0098c2;
+  /* azul */
+}
+
+
+
+.botones a:active {
+  background-color: #173034;
+  color: #ffe9c5;
+  box-shadow: 0 5px #173034;
+  transform: translateY(4px);
+}
+
+/* === EFECTO DE BRILLO === */
+
+.botones a {
+  position: relative;
+  /* Necesario para que el ::before se posicione dentro */
+  overflow: hidden;
+  /* Para que el brillo no se salga */
+}
+
+.botones a::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  /* Comienza fuera a la izquierda */
+  width: 50%;
+  height: 100%;
+  background: #ffe9c5;
+  transform: skewX(-20deg);
+}
+
+.botones a:hover::before {
+  animation: shine 0.75s forwards;
+}
+
+@keyframes shine {
+  0% {
+    left: -75%;
+  }
+
+  100% {
+    left: 125%;
+  }
+}   
+
+
+/*=== fuentes ===*/
+.cherry-bomb-one-regular {
+  font-family: "Cherry Bomb One", system-ui;
+  font-weight: 400;
+  font-style: normal;
+}
+
+
+@media (min-width: 768px) {
+  .global-styles {
+    gap: 50px;
+    /* Aumenta el espacio */
+  }
+}
+
+
+
+:root {
+  --amarillito: #ffdea8;
+  --amarillo: #fcb036;
+  --azulito: #0098c2;
+  --azul: #173034;
+  --aqua: #82ddb2;
+
+}

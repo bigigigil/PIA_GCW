@@ -1,0 +1,105 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+  
+}
+
+canvas {
+  display: block;
+}
+
+
+/* NUEVO USUARIO */
+.Nuevo_Usuario {
+  background-color: var(--amarillito);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+}
+
+.Nuevo_Usuario .new-container {
+
+  height: 60%;
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  align-items: right;
+  gap: 30px;
+  background-color: var(--amarillito);
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: -15px 15px 0px var(--aqua);
+  border: 10px solid var(--azul);
+  margin-top: -10%;
+  position: relative;
+}
+
+.Nuevo_Usuario [type=text],
+.Nuevo_Usuario input[type=password] {
+  padding: 12px 15px;
+  margin-top: 8px;
+  font-size: 17px;
+  font-family: "Cherry Bomb One", system-ui;
+  font-weight: lighter;
+  border:3px dashed var(--azul);
+  border-radius: 50px;
+  background-color: transparent;
+  width: 80%;
+
+  /* adjust as needed (as long as it doesn't break the topnav) */
+}
+
+
+.Nuevo_Usuario .new-container button {
+  display: inline-block;
+  padding: 12px 15px;
+  margin: 10px;
+  background-color: var(--aqua);
+  color: #173034;
+  font-family: "Cherry Bomb One", system-ui;
+  border: none;
+  border-radius: 50px;
+  box-shadow: 0 9px #173034;
+  text-decoration: none;
+  font-size: 20px;
+  font-weight: normal;
+  transition: 0.3s ease;
+}
+
+.Nuevo_Usuario .new-container button:hover {
+  background: var(--amarillo);
+}
+
+.Nuevo_Usuario .new-container h1 {
+  font-family: "Cherry Bomb One", system-ui;
+  font-weight: lighter;
+  color: var(--azul);
+  background-color: var(--azulito);
+}
+
+.Nuevo_Usuario .new-container img {
+position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  max-width: 150px;
+ 
+}
+
+:root {
+  --amarillito: #ffdea8;
+  --amarillo: #fcb036;
+  --azulito: #0098c2;
+  --azul: #173034;
+  --aqua: #82ddb2;
+
+}

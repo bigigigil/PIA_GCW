@@ -1,0 +1,264 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+canvas {
+  display: block;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* === Paleta y fuentes === */
+:root {
+  --amarillito: #ffdea8;
+  --amarillo: #fcb036;
+  --azulito: #0098c2;
+  --azul: #173034;
+  --aqua: #82ddb2;
+}
+
+.Mundo {
+  background-color: var(--amarillOpaco);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+}
+
+body {
+  margin: 0;
+  font-family: "Cherry Bomb One", system-ui, Arial, Helvetica, sans-serif;
+  background-color: var(--amarillito);
+  color: var(--azul);
+}
+
+h1 {
+  text-align: center;
+  margin: 0%;
+  font-size: 50px;
+  color: var(--azul);
+}
+
+h2 {
+  text-align: center;
+  margin: 0%;
+
+  font-family: "Playpen Sans", normal;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: bold;
+  color: var(--azul);
+}
+
+/* ===== Carrusel ===== */
+ul {
+  width: 70%;
+  height: 70%;
+  padding: 20px;
+  display: flex;
+  gap: 4vw;
+  overflow-x: scroll;
+  scroll-snap-type: x mandatory;
+
+  background-color: var(--amarillOpaco);
+}
+
+li {
+  list-style-type: none;
+  background-color: var(--amarillOpaco);
+  border: none;
+  padding: 20px;
+  flex: 0 0 100%;
+  border-radius: 15px;
+
+  scroll-snap-align: center;
+  font-size: 1.5rem;
+  text-align: center;
+  color: var(--azul);
+}
+
+
+
+/* ===== Scroll Buttons ===== */
+ul::scroll-button(*) {
+  border: 0;
+  font-size: 2rem;
+  background: none;
+  color: var(--azul);
+  opacity: 0.7;
+  cursor: pointer;
+
+}
+
+ul::scroll-button(*):hover,
+ul::scroll-button(*):focus {
+  opacity: 1;
+  color: var(--amarillo);
+}
+
+ul::scroll-button(*):active {
+  translate: 1px 1px;
+  color: var(--aqua);
+}
+
+ul::scroll-button(*):disabled {
+  opacity: 0.2;
+  cursor: unset;
+}
+
+ul::scroll-button(left) {
+  content: "◄";
+}
+
+ul::scroll-button(right) {
+  content: "►";
+}
+
+ul {
+  anchor-name: --my-carousel;
+}
+
+ul::scroll-button(*) {
+  position: absolute;
+  position-anchor: --my-carousel;
+}
+
+ul::scroll-button(left) {
+  right: calc(anchor(left));
+  bottom: calc(anchor(top) 50%);
+}
+
+ul::scroll-button(right) {
+  left: calc(anchor(right));
+  bottom: calc(anchor(top) 50%);
+}
+
+/* ===== Scroll Markers ===== */
+ul::scroll-marker-group {
+  position: absolute;
+  position-anchor: --my-carousel;
+  top: calc(anchor(bottom) - 70px);
+  justify-self: anchor-center;
+
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+li::scroll-marker {
+  content: "";
+  width: 16px;
+  height: 16px;
+  background-color: transparent;
+  border: 2px solid var(--azul);
+  border-radius: 50%;
+}
+
+li::scroll-marker:target-current {
+  background-color: var(--amarillo);
+  border-color: var(--azul);
+}
+
+.Mundo a {
+  display: inline;
+  padding: 12px 30px;
+  background-color: #fcb036;
+  color: #173034;
+  font-family: "Cherry Bomb One", system-ui;
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 9px #173034;
+  text-decoration: none;
+  font-size: 40px;
+  font-weight: normal;
+  transition: 0.3s ease;
+  margin-top: -4px;
+}
+
+.Mundo a:first-child {
+  background-color: #82ddb2;
+}
+
+
+.Mundo a:last-child {
+  background-color: #0098c2;
+  /* azul */
+}
+
+
+
+.Mundo a:active {
+  background-color: #173034;
+  color: #ffe9c5;
+  box-shadow: 0 5px #173034;
+  transform: translateY(4px);
+}
+
+/* === EFECTO DE BRILLO === */
+
+.Mundo a {
+  position: relative;
+  /* Necesario para que el ::before se posicione dentro */
+  overflow: hidden;
+  /* Para que el brillo no se salga */
+}
+
+.Mundo a::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  /* Comienza fuera a la izquierda */
+  width: 50%;
+  height: 100%;
+  background: #ffe9c5;
+  transform: skewX(-20deg);
+}
+
+.Mundo a:hover {
+  background-color: var(--amarillo);
+
+}
+
+.Mundo a:hover::before {
+  animation: shine 0.75s forwards;
+}
+
+@keyframes shine {
+  0% {
+    left: -75%;
+  }
+
+  100% {
+    left: 125%;
+  }
+}
+
+/* fuentes
+
+.playpen-sans-<uniquifier> {
+  font-family: "Playpen Sans", cursive;
+  font-optical-sizing: auto;
+  font-weight: <weight>;
+  font-style: normal;
+}
+
+*/
+
+:root {
+  --amarillOpaco: #fbcc81;
+  --amarillito: #ffdea8;
+  --amarillo: #fcb036;
+  --azulito: #0098c2;
+  --azul: #173034;
+  --aqua: #82ddb2;
+}
