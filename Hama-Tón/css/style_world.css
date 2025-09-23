@@ -32,6 +32,8 @@ canvas {
   justify-content: center;
   align-items: center;
   gap: 30px;
+  overflow: scroll;
+  scrollbar-color: var(--azul) var(--amarillOpaco);
 }
 
 body {
@@ -168,7 +170,36 @@ li::scroll-marker:target-current {
   border-color: var(--azul);
 }
 
-.Mundo a {
+#nivelMundo {
+  text-decoration: none;
+}
+
+#nivelMundo img {
+ transform: rotate(5deg);
+  transition: 0.3s ease;
+
+  animation:
+    1s linear 0s infinite alternate giros;
+}
+
+
+@keyframes giros {
+  from {
+    transform: rotateZ(-5deg);
+  }
+  to {
+    transform: rotateZ(5deg);
+  }
+}
+
+
+#nivelMundo img:hover{
+  animation: none;
+  transform: scale(1.08);
+  transition: 0.3s ease;
+}
+
+.Mundo .btn {
   display: inline;
   padding: 12px 30px;
   background-color: #fcb036;
@@ -184,19 +215,19 @@ li::scroll-marker:target-current {
   margin-top: -4px;
 }
 
-.Mundo a:first-child {
+.Mundo .btn:first-child {
   background-color: #82ddb2;
 }
 
 
-.Mundo a:last-child {
+.Mundo .btn:last-child {
   background-color: #0098c2;
   /* azul */
 }
 
 
 
-.Mundo a:active {
+.Mundo .btn:active {
   background-color: #173034;
   color: #ffe9c5;
   box-shadow: 0 5px #173034;
@@ -205,14 +236,14 @@ li::scroll-marker:target-current {
 
 /* === EFECTO DE BRILLO === */
 
-.Mundo a {
+.Mundo .btn {
   position: relative;
   /* Necesario para que el ::before se posicione dentro */
   overflow: hidden;
   /* Para que el brillo no se salga */
 }
 
-.Mundo a::before {
+.Mundo .btn::before {
   content: "";
   position: absolute;
   top: 0;
@@ -224,12 +255,12 @@ li::scroll-marker:target-current {
   transform: skewX(-20deg);
 }
 
-.Mundo a:hover {
+.Mundo .btn:hover {
   background-color: var(--amarillo);
 
 }
 
-.Mundo a:hover::before {
+.Mundo .btn:hover::before {
   animation: shine 0.75s forwards;
 }
 
@@ -242,6 +273,8 @@ li::scroll-marker:target-current {
     left: 125%;
   }
 }
+
+
 
 /* fuentes
 
