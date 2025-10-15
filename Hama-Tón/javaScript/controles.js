@@ -1,4 +1,3 @@
-/* MODALES */
 const pauseBtn = document.getElementById("pauseBtn");
 const ajustesBtn = document.getElementById("ajustesBtn");
 
@@ -11,6 +10,7 @@ const cerrarModalAjustes = document.getElementById("cerrarModalAjustes");
 const salirBtn = document.getElementById("salirBtn");
 const casaBtn = document.getElementById("casaBtn");
 const reiniciarBtn = document.getElementById("reiniciarBtn");
+const explorarBtn = document.getElementById("explorarBtn");
 const continuarBtn = document.getElementById("continuarBtn");
 
 let juegoPausado = false;
@@ -45,6 +45,14 @@ continuarBtn.addEventListener("click", () => {
 salirBtn.addEventListener("click", () => {
   window.location.href = "inicio.html";
 });
+
+if (explorarBtn) {
+  explorarBtn.addEventListener("click", () => {
+    window.location.href = "world.html";
+  });
+}
+
+
 casaBtn.addEventListener("click", () => {
   window.location.href = "casa.html";
 });
@@ -52,7 +60,7 @@ reiniciarBtn.addEventListener("click", () => {
   window.location.href = "world.html";
 });
 
-/* Cerrar al hacer clic fuera */
+
 window.addEventListener("click", (event) => {
   if (event.target === modalPausa) {
     juegoPausado = false;
@@ -64,7 +72,6 @@ window.addEventListener("click", (event) => {
   }
 });
 
-/* Toggle con ESC */
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     if (modalPausa.style.display === "flex") {

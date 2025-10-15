@@ -14,11 +14,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px; /* espacio entre icono y texto */
+  gap: 10px; 
   overflow: hidden;
 }
 
-/* Posición de los botones uno debajo del otro */
 .pause-btn { 
    background: #0098c2;
   top: 40%; }
@@ -26,7 +25,6 @@
    background: #82ddb2;
   top: 55%; }
 
-/* Texto oculto por defecto */
 .btn-icon .btn-text {
   opacity: 0;
   max-width: 0;
@@ -36,13 +34,11 @@
   font-size: 24px;
 }
 
-/* Al hacer hover, se muestra el texto */
 .btn-icon:hover .btn-text {
   opacity: 1;
-  max-width: 200px; /* ancho suficiente para mostrar el texto */
+  max-width: 200px;
 }
 
-/* Efecto hover sobre el botón */
 .btn-icon:hover {
   background: #fcb036;
 }
@@ -59,13 +55,49 @@
   top: 55%;       
 }
 
+#brilloRange {
+  width: 200px;
+  height: 8px;
+  border-radius: 5px;
+  background: var(--amarillito);
+  outline: none;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
 
+#brilloRange:hover {
+  background: var(--amarillo);
+}
 
+#brilloRange::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--azulito);
+  border: 2px solid var(--azul);
+  transition: transform 0.2s ease;
+}
 
+#brilloRange::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  background: var(--aqua);
+}
 
+#brilloRange::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--azulito);
+  border: 2px solid var(--azul);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
 
-/*Colores*/
-
+#brilloRange::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  background: var(--aqua);
+}
 
 :root {
   --amarillito: #ffdea8;

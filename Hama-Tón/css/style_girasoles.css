@@ -1,0 +1,73 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+canvas {
+  display: block;
+}
+
+.Usuario {
+  position: fixed;       
+  right: 20px;           
+  top: 20%;              
+  background-color: var(--amarillito);
+  border: 5px solid var(--azul);
+  border-radius: 20px;
+  padding: 20px;
+  width: 220px;          
+  z-index: 1500;         
+  box-shadow: -10px 10px 0px var(--azul);
+  font-family: "Cherry Bomb One", system-ui;
+  text-align: center;
+  animation: slideInRight 0.5s ease; 
+}
+
+.Usuario .info h1 {
+  font-size: 24px;
+  color: var(--azul);
+}
+
+.Usuario .info h2 {
+  font-size: 18px;
+  color: var(--azul);
+  margin: 5px 0;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(150%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+
+
+.casaContainer {
+  height: 100%;
+  width: 100%;
+
+    background-color: #87CEFA;
+  background-repeat: no-repeat, no-repeat;
+  background-size: cover, cover;
+
+}
+
+
+
+    :root {
+  --amarillito: #ffdea8;
+  --amarillo: #fcb036;
+  --azulito: #0098c2;
+  --azul: #173034;
+  --aqua: #82ddb2;
+
+}

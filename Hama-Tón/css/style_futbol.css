@@ -12,19 +12,19 @@ canvas {
 }
 
 .Puntaje {
-  position: fixed;       /* se mantiene fijo en pantalla */
-  right: 20px;           /* pegado al lado derecho */
-  top: 20%;              /* lo bajas un poco para que quede centrado */
+  position: fixed;       
+  right: 20px;           
+  top: 20%;            
   background-color: var(--amarillito);
   border: 5px solid var(--azul);
   border-radius: 20px;
   padding: 20px;
-  width: 220px;          /* ancho fijo */
-  z-index: 1500;         /* encima de la escena pero debajo de los modales */
+  width: 220px;         
+  z-index: 1500;        
   box-shadow: -10px 10px 0px var(--azul);
   font-family: "Cherry Bomb One", system-ui;
   text-align: center;
-  animation: slideInRight 0.5s ease; /* animación opcional */
+  animation: slideInRight 0.5s ease; 
 }
 
 .Puntaje .info h1 {
@@ -38,7 +38,6 @@ canvas {
   margin: 5px 0;
 }
 
-/* Animación de entrada desde la derecha */
 @keyframes slideInRight {
   from {
     transform: translateX(150%);
@@ -49,8 +48,6 @@ canvas {
     opacity: 1;
   }
 }
-
-
 
 .canchaContainer {
   height: 100%;

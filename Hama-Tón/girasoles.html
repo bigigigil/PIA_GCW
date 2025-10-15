@@ -4,14 +4,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Girasoles | Hama-tón ٩(ˊᗜˋ*)و .ᐟ.ᐟ</title>
+  <title> ˚‧｡⋆🌻⋆｡‧˚|| Hama-tón.ᐟ</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Cherry+Bomb+One&display=swap" rel="stylesheet">
 
   <!--<link rel="stylesheet" href="style.css">-->
   <link rel="stylesheet" href="css/style_controles.css">
   <link rel="stylesheet" href="css/style_modal.css">
-  <link rel="stylesheet" href="css/style_girasoles">
+  <link rel="stylesheet" href="css/style_girasoles.css">
 </head>
 
 <body>
@@ -44,6 +44,8 @@
       <h2 class="modal-titulo">JUEGO EN PAUSA</h2>
       <div class="modal-opciones">
         <button class="modal-boton" id="continuarBtn">Continuar</button>
+        <button class="modal-boton" id="reiniciarBtn">Cambiar de Mundo</button>
+        <button class="modal-boton" id="casaBtn">Ir a Casa</button>
         <button class="modal-boton" id="salirBtn">Salir del Juego</button>
       </div>
     </div>
@@ -53,7 +55,7 @@
       <button class="cerrar-modal" id="cerrarModalAjustes">✕</button>
       <h2 class="modal-titulo">AJUSTES</h2>
       <div class="modal-opciones">
-        <label><input type="checkbox" id="toggleVolumen" checked> Volumen</label>
+        <label><input type="checkbox" id="toggleVolumen" checked> Sonido</label>
         <label><input type="checkbox" id="toggleMusica" checked> Música</label>
         <label>Brillo <input type="range" id="brilloRange" min="0" max="2" step="0.1" value="1"></label>
       </div>
@@ -61,7 +63,7 @@
   </div>
 
   <div class="casaContainer">
-    <!-- Three.js se renderizará aquí -->
+
   </div>
 
   <!-- Importación de Three.js desde CDN -->
@@ -72,16 +74,25 @@
   <script>
     // --- escena, cámara y render ---
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(
+      15, // FOV
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+    let cameraMode = 0; // 0 = sigue a hamster, 1 = ver frosty
+
+
     const renderer = new THREE.WebGLRenderer({ alpha: true });
+    const cameraOffset = new THREE.Vector3(0, 5, -15); // detrás y arriba
+
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setClearColor(0x000000, 0); // Fondo transparente
     document.querySelector('.casaContainer').appendChild(renderer.domElement);
 
-    camera.position.z = 15;
+    // camera.position.z = 15;
 
     // luces
-
     const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
     keyLight.position.set(20, 20, 20);
     scene.add(keyLight);
@@ -91,31 +102,28 @@
     scene.add(fillLight);
 
     // suelo textura
-    // Cargar textura
-    const textureLoader = new THREE.TextureLoader();
-    const floorTexture = textureLoader.load('./models/textures/piso.png');
-    // Para que se repita muchas veces en el plano
-    floorTexture.wrapS = THREE.RepeatWrapping;
-    floorTexture.wrapT = THREE.RepeatWrapping;
-    floorTexture.repeat.set(40, 10); // cantidad de repeticiones (ajusta a gusto)
-
-    // Piso (un plano grande que hace de suelo)
-    const floorGeometry = new THREE.PlaneGeometry(400, 100); // tamaño grande
+    const loader = new THREE.TextureLoader();
+    const displacement = loader.load('./models/textures/nieve.png'); //heightmap
+    const floorGeometry = new THREE.PlaneGeometry(1000, 1000, 200, 200);
     const floorMaterial = new THREE.MeshStandardMaterial({
-      map: floorTexture,
-      //color: 0xffa31a,
-      roughness: 10,
-      metalness: 0,
+      color: 0xb3ff66,
+      displacementMap: displacement,
+      displacementScale: 10,
+      map: displacement,
+      roughness: 1,
     });
+
+
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-    floor.rotation.x = (-Math.PI / 2)+0.05; // ponerlo plano en el eje XZ
-    floor.position.y = -10; // un poquito más abajo que el hamster
+    floor.rotation.x = (-Math.PI / 2) + 0.05;
+    floor.position.y = -11;
     scene.add(floor);
 
 
     /* CARGAR MODELoS 1/2*/
     // declar global modelos
     let hamster;
+
 
     function loadModel(objPath, mtlPath, options = {}, onLoad) {
       const mtlLoader = new THREE.MTLLoader();
@@ -125,12 +133,11 @@
         const objLoader = new THREE.OBJLoader();
         objLoader.setMaterials(materials);
         objLoader.load(objPath, (obj) => {
-          // aplicar opciones
+
           if (options.scale) obj.scale.set(...options.scale);
           if (options.position) obj.position.set(...options.position);
           if (options.rotation) obj.rotation.set(...options.rotation);
 
-          // asegurar materiales simples
           obj.traverse((child) => {
             if (child.isMesh) {
               child.material = new THREE.MeshBasicMaterial({
@@ -141,7 +148,7 @@
 
           scene.add(obj);
 
-          if (onLoad) onLoad(obj); // callback por si quieres guardarlo
+          if (onLoad) onLoad(obj);
         });
       });
     }
@@ -149,18 +156,21 @@
     /* CARGAR MODELoS 2/2*/
 
     loadModel('./models/hamster.obj', './models/hamster.mtl', {
-      scale: [15, 15, 15],
-      position: [0, -3, -1],
-      rotation: [0.01, 0, 0],
+      scale: [25, 25, 25],
+      position: [0, -3, 10],
+      rotation: [0, 0, 0],
     }, (obj) => { hamster = obj; });
+
+
+
 
 
     /* configurar teclas*/
     document.addEventListener('keydown', (event) => {
       if (!hamster) return;
 
-      const speed = 1; // velocidad de movimiento
-      const turnSpeed = 0.5; // velocidad de rotación
+      const speed = 5;
+      const turnSpeed = 0.5;
 
       switch (event.key) {
         // Rotar a izquierda/derecha
@@ -194,6 +204,12 @@
           hamster.position.x -= Math.cos(hamster.rotation.y) * speed;
           hamster.position.z += Math.sin(hamster.rotation.y) * speed;
           break;
+        case 'c':
+          cameraMode = (cameraMode + 1) % 2;
+          break;
+
+
+
       }
     });
 
@@ -201,11 +217,35 @@
     function animate() {
       requestAnimationFrame(animate);
 
+      // if (frosty) frosty.rotation.y += 0.01;
+
+      if (hamster) {
+        if (cameraMode === 0) {
+
+          const desiredPosition = new THREE.Vector3(
+            hamster.position.x,
+            hamster.position.y,
+            hamster.position.z + 150
+          );
+          camera.position.lerp(desiredPosition, 0.5);
+
+          const lookTarget = new THREE.Vector3(
+            hamster.position.x,
+            hamster.position.y + 5,
+            hamster.position.z
+          );
+          camera.lookAt(lookTarget);
+
+        }
+
+      }
+
       renderer.render(scene, camera);
     }
+
     animate();
 
-    // ajuste al redimensionar
+
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -215,8 +255,8 @@
 
   </script>
 
-   <script src="javaScript/controles.js"></script>
-
+  <script src="javaScript/controles.js"></script>
+  <script src="javaScript/nevado.js"></script>
 
 </body>
 
