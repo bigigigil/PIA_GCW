@@ -1,19 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
-   
-    const loginForm = document.getElementById('loginForm'); 
-    
+
+    const loginForm = document.getElementById('loginForm');
+
     if (loginForm) {
         loginForm.addEventListener('submit', async (event) => {
-            event.preventDefault(); 
+            event.preventDefault();
             const formData = new FormData(loginForm);
-           
+
             const data = Object.fromEntries(formData.entries());
 
             try {
                 const response = await fetch('/login', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json' 
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(data)
                 });
@@ -21,11 +21,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                  
+
                     localStorage.setItem('userId', result.userId);
                     localStorage.setItem('username', result.username);
-
-                    window.location.href = result.redirect; 
+                    localStorage.setItem('currentWorld', result.redirect);
+                    window.location.href = result.redirect;
                 } else {
                     alert('Error de login: ' + (result.message || 'Credenciales incorrectas o error desconocido.'));
                 }
