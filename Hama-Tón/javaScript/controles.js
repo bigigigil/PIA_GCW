@@ -15,7 +15,6 @@ const continuarBtn = document.getElementById("continuarBtn");
 
 let juegoPausado = false;
 
-/* Abrir modales */
 pauseBtn.addEventListener("click", () => {
   juegoPausado = true;
   modalPausa.style.display = "flex";
@@ -26,7 +25,6 @@ ajustesBtn.addEventListener("click", () => {
   modalAjustes.style.display = "flex";
 });
 
-/* Cerrar modales */
 cerrarModalPausa.addEventListener("click", () => {
   juegoPausado = false;
   modalPausa.style.display = "none";
@@ -85,4 +83,41 @@ document.addEventListener("keydown", (event) => {
       modalPausa.style.display = "flex";
     }
   }
+});
+
+const socket = io();
+
+const USUARIO_AUTENTICADO = { 
+    id: window.localStorage.getItem('userId') || 'guest_' + Math.random(), 
+    username: window.localStorage.getItem('username') || 'Invitado' 
+};
+
+socket.on('connect', () => {
+    socket.emit('usuario conectado', USUARIO_AUTENTICADO);
+});
+
+socket.on('jugadores en línea', (jugadores) => {
+    console.log("Jugadores ya en línea:", jugadores);
+});
+
+socket.on('nuevo jugador', (data) => {
+    console.log(`¡Nuevo jugador se conectó! ${data.username} (${data.id})`);
+});
+
+socket.on('actualizar posición', (data) => {
+    console.log(`Actualizando posición de ${data.id} a (${data.x}, ${data.y})`);
+});
+
+socket.on('jugador desconectado', (data) => {
+    console.log(`Jugador desconectado: ${data.id}`);
+});
+
+document.addEventListener('keydown', (event) => {
+    let x = 0, y = 0;
+    if (event.key === 'ArrowRight') x = 1;
+    if (event.key === 'ArrowLeft') x = -1;
+
+    if (x !== 0 || y !== 0) {
+        socket.emit('movimiento jugador', { x: x, y: y, id: socket.id });
+    }
 });
