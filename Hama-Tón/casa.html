@@ -126,12 +126,10 @@
         const objLoader = new THREE.OBJLoader();
         objLoader.setMaterials(materials);
         objLoader.load(objPath, (obj) => {
-          // aplicar opciones
           if (options.scale) obj.scale.set(...options.scale);
           if (options.position) obj.position.set(...options.position);
           if (options.rotation) obj.rotation.set(...options.rotation);
 
-          // asegurar materiales simples
           obj.traverse((child) => {
             if (child.isMesh) {
               child.material = new THREE.MeshBasicMaterial({
@@ -142,7 +140,7 @@
 
           scene.add(obj);
 
-          if (onLoad) onLoad(obj); // callback por si quieres guardarlo
+          if (onLoad) onLoad(obj); 
         });
       });
     }

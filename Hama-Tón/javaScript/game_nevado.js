@@ -5,8 +5,7 @@ const renderer = new THREE.WebGLRenderer({ alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x000000, 0);
 document.querySelector('.casaContainer').appendChild(renderer.domElement);
-// ... (Configuración de luces y suelo, asumimos que están aquí) ...
-// luces
+
 const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
 keyLight.position.set(20, 20, 20);
 scene.add(keyLight);
@@ -14,7 +13,7 @@ scene.add(keyLight);
 const fillLight = new THREE.DirectionalLight(0xffffff, 1);
 fillLight.position.set(-20, 10, 10);
 scene.add(fillLight);
-// suelo
+
 const loader = new THREE.TextureLoader();
 const snowTexture = loader.load('./models/textures/nieve.png');
 
@@ -30,7 +29,6 @@ floor.rotation.x = (-Math.PI / 2) + 0.05;
 floor.position.y = -11;
 scene.add(floor);
 
-// --- VARIABLES GLOBALES DEL JUEGO ---
 const moveState = { forward: false, backward: false, left: false, right: false };
 const turnSpeed = 0.05;
 const moveSpeed = 1.5;
@@ -46,60 +44,104 @@ let hamsterBox;
 const remotePlayers = new Map();
 
 const GOALS = { RAMAS: 2, PIEDRITAS: 10, ZANAHORIA: 1 };
+const MAX_LIVES = 3;
+let LIVES = MAX_LIVES;
+
+const OBJECT_ORDER = [
+    'snowball_base',
+    'ramas',
+    'piedritas',
+    'zanahoria'
+];
+let currentObjectiveIndex = 0;
+
 let carried = { type: null, count: 0 };
 let collected = { ramas: 0, piedritas: 0, zanahoria: 0 };
+
 let ramas = [];
 let piedritas = [];
 let snowballBox;
 let snowballSize = 0.1;
 const MAX_SNOWBALL_SIZE = 1;
+const GROW_RATE = 0.005;
 let isSnowballReady = false;
+let isCarryingSnowball = false;
+
 const FROSTY_MAIN_POSITION = new THREE.Vector3(0, -3, -25);
 let frostyModels = [];
 let currentFrostyIndex = 0;
+let carriedModel = null;
 
-const cameraOffset = new THREE.Vector3(0, 5, -15); // detrás y arriba
+const cameraOffset = new THREE.Vector3(0, 5, -15);
 
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x000000, 0); // Fondo transparente
+renderer.setClearColor(0x000000, 0);
 document.querySelector('.casaContainer').appendChild(renderer.domElement);
 
-
-
-
-
-// --- FUNCIONES DE UTILIDAD ---
-
-
-
 function updateUI() {
-    const carrotElement = document.querySelector('h2:nth-child(3)');
-    const branchElement = document.querySelector('h2:nth-child(4)');
-    const stoneElement = document.querySelector('h2:nth-child(5)');
+
+    const username = window.localStorage.getItem('username') || 'Tú';
+    const usernameElement = document.getElementById('usernameDisplay') || document.querySelector('h1');
+    if (usernameElement) usernameElement.textContent = username;
+
+    const livesElement = document.getElementById('livesDisplay');
+    const carrotElement = document.getElementById('carrotDisplay');
+    const branchElement = document.getElementById('branchDisplay');
+    const stoneElement = document.getElementById('stoneDisplay');
+    const carriedElement = document.getElementById('carriedDisplay');
+    const objectiveElement = document.getElementById('objectiveDisplay');
+    const messageElement = document.getElementById('gameMessage');
+
+    if (livesElement) {
+        livesElement.textContent = `Vidas: ${LIVES}`;
+    }
 
     if (carrotElement) carrotElement.textContent = `zanahoria: ${collected.zanahoria}/${GOALS.ZANAHORIA}`;
     if (branchElement) branchElement.textContent = `ramas: ${collected.ramas}/${GOALS.RAMAS}`;
     if (stoneElement) stoneElement.textContent = `piedritas: ${collected.piedritas}/${GOALS.PIEDRITAS}`;
+
+    if (carriedElement) {
+        if (carried.type) {
+            carriedElement.textContent = `Llevas: ${carried.type} (${carried.count})`;
+        } else if (isCarryingSnowball) {
+            carriedElement.textContent = `Llevas: Base de Nieve Lista`;
+        } else {
+            carriedElement.textContent = `Llevas: Nada`;
+        }
+    }
+
+    if (objectiveElement) {
+        if (currentObjectiveIndex < OBJECT_ORDER.length) {
+            objectiveElement.textContent = `Objetivo: ${OBJECT_ORDER[currentObjectiveIndex].toUpperCase().replace('_', ' ')}`;
+        } else {
+            objectiveElement.textContent = `Objetivo: COMPLETADO`;
+        }
+    }
+
+    if (LIVES <= 0) {
+        if (messageElement) messageElement.textContent = '¡Juego Terminado! 😵 Sin Vidas';
+        juegoPausado = true;
+    } else if (currentFrostyIndex === frostyModels.length - 1) {
+        if (messageElement) messageElement.textContent = '¡Felicidades! Muñeco de Nieve Completo. ¡Ganaste! 🎉';
+      
+    } else {
+    }
 }
 
 function createLocalPlayerMarker() {
     const geometry = new THREE.CircleGeometry(0.5, 32);
     const material = new THREE.MeshBasicMaterial({
-        color: 0x00ff00,
+        color: 0x00b3b3,
         transparent: true,
-        opacity: 0.5,
+        opacity: 0,
         depthTest: false,
     });
     const marker = new THREE.Mesh(geometry, material);
-    // Lo rotamos para que quede horizontal
     marker.rotation.x = -Math.PI / 2;
-    marker.rotation.y = 0;
-    // CORRECCIÓN DE POSICIÓN: Ahora es RELATIVA al pivot del hámster.
-    // El pivot del hámster está 8 unidades por encima del suelo. 
-    // Para que el círculo esté en el suelo, debe estar 8.1 unidades por debajo del pivot.
+    marker.rotation.y = 0.01;
     marker.position.x = 0;
-    marker.position.z = 0; // Centrado bajo el hámster
-    marker.position.y = -0.3; // Distancia hacia abajo (relativa al pivot, NO al suelo)
+    marker.position.z = 0;
+    marker.position.y = -0.05;
 
     return marker;
 }
@@ -108,7 +150,6 @@ function createUsernameLabel(username) {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
 
-    // Aumentar el tamaño del lienzo para mayor resolución y claridad
     const scaleFactor = 1;
     const baseFontSize = 10;
     const fontSize = baseFontSize * scaleFactor;
@@ -119,13 +160,12 @@ function createUsernameLabel(username) {
     canvas.width = (textWidth + 10) * scaleFactor;
     canvas.height = (fontSize + 10) * scaleFactor;
 
-    // Asegurarse de reajustar la fuente después de cambiar el tamaño del lienzo
     context.font = font;
 
-    context.fillStyle = 'rgba(0, 0, 0, 0.6)'; // Fondo semi-transparente
+    context.fillStyle = 'rgba(0, 0, 0, 0.6)';
     context.fillRect(0, 0, canvas.width, canvas.height);
 
-    context.fillStyle = 'white'; // Color del texto
+    context.fillStyle = 'white';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.fillText(username, canvas.width / 2, canvas.height / 2);
@@ -148,7 +188,7 @@ function loadModel(objPath, mtlPath, options = {}, onLoad) {
         objLoader.setMaterials(materials);
         objLoader.load(objPath, (obj) => {
 
-            if (options.scale) obj.scale.set(...options.scale);
+            if (options.scale && Array.isArray(options.scale)) obj.scale.set(...options.scale);
             if (options.position) obj.position.set(...options.position);
             if (options.rotation) obj.rotation.set(...options.rotation);
 
@@ -202,7 +242,7 @@ function updateHamsterMovement() {
     const floorY = getFloorHeight(hamster.position.x, hamster.position.z);
     hamster.position.y = floorY + HAMSTER_HEIGHT + MODEL_Y_OFFSET;
 
-    if (snowball && isMoving) {
+    if (snowball && !isCarryingSnowball && snowballSize < MAX_SNOWBALL_SIZE && isMoving) {
         const distanceToSnowball = hamster.position.distanceTo(snowball.position);
 
         if (distanceToSnowball < 25) {
@@ -222,165 +262,364 @@ function updateHamsterMovement() {
             }
         }
     }
+
+    if (isCarryingSnowball && snowball) {
+        snowball.position.copy(hamster.position);
+        snowball.position.y += 10;
+        snowball.rotation.y += 0.05;
+    }
+    if (carriedModel) {
+        carriedModel.position.copy(hamster.position);
+        carriedModel.position.y += 8;
+        carriedModel.rotation.y += 0.05;
+    }
+    if (carried.type && carried.count > 0 && hamster) {
+    }
 }
 
+function pickUpSnowball() {
+    if (!snowball || juegoPausado || carried.type || isCarryingSnowball) return;
+
+    const distanceToSnowball = hamster.position.distanceTo(snowball.position);
+
+    if (distanceToSnowball < 15) {
+        if (isSnowballReady) {
+            isCarryingSnowball = true;
+            console.log("Bola de nieve grande recogida. ¡Llévala a Frosty!");
+            updateUI();
+        }
+        else if (snowballSize < 0.2) {
+            isCarryingSnowball = true;
+            console.log("Bola de nieve pequeña recogida. ¡Llévala a Frosty para intentar hacerla más grande!");
+            updateUI();
+        }
+    }
+}
+function dropCarriedItem() {
+    if (juegoPausado) return;
+
+    if (isCarryingSnowball && snowball) {
+        isCarryingSnowball = false;
+        snowball.position.copy(hamster.position);
+        snowball.position.y = -3;
+        snowball.rotation.y = 0;
+        console.log("Bola de nieve soltada.");
+    }
+
+    if (carried.type && carried.count > 0) {
+        console.log(`Se soltó ${carried.type} (objeto perdido).`);
+        carried.type = null;
+        carried.count = 0;
+    }
+    updateUI();
+}
+
+// game_nevado.js (Alrededor de la línea 336)
+
+function setCarriedModel(itemType) {
+    if (carriedModel) {
+        return;
+    }
+
+    let modelPath = '';
+    let mtlPath = '';
+    // Simplificamos la escala a valores individuales en lugar de un array para evitar el error de spread.
+    let scaleX = 15;
+    let scaleY = 15;
+    let scaleZ = 15; 
+
+    if (itemType === 'ramas') {
+        modelPath = './models/nevado/rama.obj';
+        mtlPath = './models/nevado/rama.mtl';
+    } else if (itemType === 'piedritas') {
+        modelPath = './models/nevado/piedrita.obj';
+        mtlPath = './models/nevado/piedrita.mtl';
+    } else {
+        return;
+    }
+
+    loadModel(modelPath, mtlPath, {
+        // Pasar la escala como un array nuevo para que sea iterable
+        scale: [scaleX, scaleY, scaleZ], 
+        position: hamster.position.clone().add(new THREE.Vector3(0, 8, 0)).toArray(), // Aseguramos que position sea un array
+    }, (obj) => {
+        carriedModel = obj;
+        carriedModel.traverse((child) => {
+            if (child.isMesh) {
+                child.material.color.set(0x7f6a5b);
+                child.material.transparent = true;
+                child.material.opacity = 0.8;
+            }
+        });
+        scene.add(carriedModel);
+    });
+}
 function checkPickupCollision() {
-    // 💡 FIX 3: Esta función se ejecuta aquí.
-    if (!hamster || !hamsterBox || carried.type) return;
+
+    if (!hamster || !hamsterBox || isCarryingSnowball) return;
+    if (carried.type && carried.type !== 'ramas' && carried.type !== 'piedritas' && carried.type !== 'zanahoria') return;
+    // Si ya lleva ramas/piedritas, solo puede recoger más del mismo tipo
+    if (carried.type && carried.type !== 'ramas' && carried.type !== 'piedritas') return;
+
 
     const checkItem = (item) => {
         if (!item.collected && hamsterBox.intersectsBox(item.box)) {
-            // Lógica de recogida
+
+            if (carried.type && carried.type !== item.type) return false;
+
+            if ((carried.type === 'ramas' || carried.type === 'piedritas') && item.type === 'zanahoria') return false;
+
+
             item.collected = true;
             item.mesh.visible = false;
             scene.remove(item.mesh);
 
-            carried.type = item.type !== 'piedritas' ? item.type : 'piedritas';
-            carried.count = 1;
+            carried.type = item.type;
+            carried.count++;
+
+            if (carried.count === 1 && carried.type !== 'zanahoria') {
+                setCarriedModel(item.type);
+            }
+
+            console.log(`Recogido: ${carried.type} (${carried.count})`);
             return true;
         }
         return false;
     };
 
     if (zanahoria && !zanahoria.collected && checkItem(zanahoria)) return;
-    for (const item of ramas) { if (checkItem(item)) return; }
-    for (const item of piedritas) { if (checkItem(item)) return; }
+    for (const item of ramas) { if (checkItem(item)) continue; }
+    for (const item of piedritas) { if (checkItem(item)) continue; }
+
+    updateUI();
 }
 
 function checkDeliveryCollision() {
-    if (!hamster || !frostyModels[currentFrostyIndex] || !carried.type) return;
+    if (!hamster || !frostyModels[currentFrostyIndex] || (!carried.type && !isCarryingSnowball)) return;
 
     const frostyMesh = frostyModels[currentFrostyIndex];
     const distanceToFrosty = hamster.position.distanceTo(frostyMesh.position);
 
-    // Si el hámster está lo suficientemente cerca para hacer la "entrega"
     if (distanceToFrosty < DELIVERY_RADIUS) {
-
+        let deliveredItem = carried.type || (isCarryingSnowball ? 'snowball_base' : null);
         let shouldProgress = false;
 
-        switch (carried.type) {
-            case 'ramas':
-                if (currentFrostyIndex === 1 && collected.ramas < GOALS.RAMAS) {
-                    collected.ramas += carried.count;
-                    if (collected.ramas >= GOALS.RAMAS) shouldProgress = true;
-                }
-                break;
-            case 'piedritas':
-                if (currentFrostyIndex === 2 && collected.piedritas < GOALS.PIEDRITAS) {
-                    // Si llevamos piedritas, asumimos que entregamos el resto de las que faltan
-                    collected.piedritas = GOALS.PIEDRITAS;
-                    shouldProgress = true;
-                }
-                break;
-            case 'zanahoria':
-                if (currentFrostyIndex === 3 && collected.zanahoria < GOALS.ZANAHORIA) {
-                    collected.zanahoria += carried.count;
-                    shouldProgress = true;
-                }
-                break;
+        const expectedItem = OBJECT_ORDER[currentObjectiveIndex];
+
+        if (deliveredItem === expectedItem) {
+
+            switch (deliveredItem) {
+                case 'snowball_base':
+                    if (isCarryingSnowball && isSnowballReady) {
+                        isCarryingSnowball = false;
+                        shouldProgress = true;
+                        if (snowball) snowball.visible = false; // Ocultar bola base
+                    } else if (isCarryingSnowball && !isSnowballReady) {
+                        LIVES--;
+                        // ... (Mensaje de error, detener hámster y reaparición de bola de nieve, sin progreso)
+                    }
+                    break;
+              case 'ramas':
+                    // **Control estricto:** Solo progresa si lleva la cantidad EXACTA.
+                    if (currentObjectiveIndex === 1 && carried.type === 'ramas' && carried.count === GOALS.RAMAS) {
+                        collected.ramas = carried.count; 
+                        shouldProgress = true;
+                    } 
+                    // Si se intentó entregar RAMAS, pero no tiene la cantidad completa:
+                    else if (currentObjectiveIndex === 1 && carried.type === 'ramas' && carried.count < GOALS.RAMAS) {
+                        // El jugador no pierde vida, pero la entrega falla.
+                        console.log(`Fallo parcial: Necesitas ${GOALS.RAMAS} ramas. Llevas ${carried.count}.`);
+                        // No hace nada más, solo evita el progreso.
+                        return; // Salir sin limpiar carried ni perder vida
+                    }
+                    break;
+                case 'piedritas':
+                     // **Control estricto:** Solo progresa si lleva la cantidad EXACTA.
+                    if (currentObjectiveIndex === 2 && carried.type === 'piedritas' && carried.count === GOALS.PIEDRITAS) {
+                        collected.piedritas = carried.count;
+                        shouldProgress = true;
+                    }
+                    // Si se intentó entregar PIEDRITAS, pero no tiene la cantidad completa:
+                    else if (currentObjectiveIndex === 2 && carried.type === 'piedritas' && carried.count < GOALS.PIEDRITAS) {
+                        console.log(`Fallo parcial: Necesitas ${GOALS.PIEDRITAS} piedritas. Llevas ${carried.count}.`);
+                        return; // Salir sin limpiar carried ni perder vida
+                    }
+                    break;
+                case 'zanahoria':
+                    // La zanahoria ya se recoge individualmente, solo se verifica que se lleva
+                    if (currentObjectiveIndex === 3 && carried.type === 'zanahoria' && carried.count === GOALS.ZANAHORIA) {
+                        collected.zanahoria = carried.count;
+                        shouldProgress = true;
+                    }
+                    break;
+            }
+
+            if (shouldProgress) {
+                progressFrostyModel(expectedItem);
+            }
+
         }
 
+        // --- Lógica de Error/Pérdida de Vida ---
+        else {
+           if (carried.type || isCarryingSnowball) {
+                LIVES--;
+                moveState.forward = moveState.backward = moveState.left = moveState.right = false;
+
+                const messageElement = document.getElementById('gameMessage');
+                const errorMessage = `❌ ¡Error! Se esperaba ${expectedItem.toUpperCase()}. Vidas: ${LIVES}`;
+                if (messageElement) {
+                    messageElement.textContent = errorMessage;
+                    setTimeout(() => {
+                        if (messageElement.textContent === errorMessage) {
+                            messageElement.textContent = '';
+                        }
+                    }, 3000);
+                }
+                // --- Lógica de reaparición general ---
+             // --- Lógica de reaparición general ---
+                let deliveredType = carried.type || (isCarryingSnowball ? 'snowball_base' : null);
+                
+                if (deliveredType === 'ramas' || deliveredType === 'piedritas' || deliveredType === 'zanahoria') {
+                    // Solo reaparece si llevaba algo recolectable
+                    const listToRespawn = deliveredType === 'ramas' ? ramas : (deliveredType === 'piedritas' ? piedritas : (deliveredType === 'zanahoria' ? [zanahoria] : []));
+
+                    listToRespawn.forEach(item => {
+                        // Reaparecer SÓLO los elementos que el hámster había recogido.
+                        if (item.collected) { 
+                            item.collected = false;
+                            item.mesh.visible = true;
+                            scene.add(item.mesh);
+                        }
+                    });
+
+                    console.log(`⚠️ Todos los ${deliveredType} reaparecen en el mundo.`);
+                }
+                
+                // Resetear la bola de nieve si es el caso (snowball_base)
+                if (deliveredType === 'snowball_base' && snowball) {
+                    snowball.visible = true;
+                    snowball.position.set(-50, -3, 0);
+                    isSnowballReady = false;
+                    snowballSize = 0.1;
+                    snowball.scale.set(snowballSize * 20, snowballSize * 20, snowballSize * 20);
+                }
+                
+                // Limpiar carried state y modelo visual después del error
+                carried.type = null;
+                carried.count = 0;
+                isCarryingSnowball = false;
+                if (carriedModel) {
+                    scene.remove(carriedModel);
+                    carriedModel = null;
+                }
+            }
+        }
+
+        // --- Limpieza de Inventario y Modelo Visual (Entrega Exitosa) ---
+        // Este bloque solo se ejecuta si shouldProgress fue TRUE.
         if (shouldProgress) {
-            // Avanzar el modelo Frosty al siguiente estado
-            progressFrostyModel();
+            console.log(`Entrega exitosa de ${deliveredItem} a Frosty!`);
+            
+            // Limpiar inventario y modelo visual, ya que el progreso ocurre.
+            carried.type = null;
+            carried.count = 0;
+            isCarryingSnowball = false; 
+            if (carriedModel) {
+                scene.remove(carriedModel);
+                carriedModel = null;
+            }
         }
 
-        // Entregado el item (o los items), el hámster no lleva nada más
-        if (carried.type) {
-            console.log(`Entrega exitosa de ${carried.type} a Frosty!`);
-        }
-        carried.type = null;
-        carried.count = 0;
         updateUI();
     }
 }
-
 function checkFrostyCollision() {
-    if (currentFrostyIndex === 0 && snowball && frostyModels[0] && isSnowballReady) {
-        const frostyMainBox = new THREE.Box3().setFromObject(frostyModels[0]);
-        snowballBox.setFromObject(snowball);
+}
 
-        if (snowballBox.intersectsBox(frostyMainBox)) {
-            console.log("Colisión: Bola de nieve lista con Frosty0. ¡Construyendo Frosty1!");
+function progressFrostyModel(deliveredItem) {
+    if (currentFrostyIndex >= frostyModels.length - 1) return;
 
-            frostyModels[0].visible = false;
+    if (deliveredItem === OBJECT_ORDER[currentObjectiveIndex]) {
+        currentObjectiveIndex++;
+
+        const nextFrostyIndex = currentFrostyIndex + 1;
+
+        if (nextFrostyIndex < frostyModels.length) {
+            if (frostyModels[currentFrostyIndex]) {
+                frostyModels[currentFrostyIndex].visible = false;
+            }
+            currentFrostyIndex = nextFrostyIndex;
+            if (frostyModels[currentFrostyIndex]) {
+                frostyModels[currentFrostyIndex].visible = true;
+            }
+            console.log(`❄️ Muñeco de nieve avanzado a fase Frosty${currentFrostyIndex}`);
             snowball.visible = false;
-            scene.remove(snowball);
-            snowball = null;
+        } else if (currentFrostyIndex === frostyModels.length - 1) {
+            console.log("¡Muñeco de Nieve Completo! ¡Ganaste! 🎉");
+        }
 
-            currentFrostyIndex = 1;
-            frostyModels[currentFrostyIndex].visible = true;
-            isSnowballReady = false;
+        carried.type = null;
+        carried.count = 0;
+        if (carriedModel) {
+            scene.remove(carriedModel);
+            carriedModel = null;
         }
     }
 }
 
-function progressFrostyModel() {
-    if (currentFrostyIndex >= frostyModels.length - 1) return;
-
-    const nextIndex = currentFrostyIndex + 1;
-
-    if (nextIndex === 2 && collected.ramas < GOALS.RAMAS) return;
-    if (nextIndex === 3 && collected.piedritas < GOALS.PIEDRITAS) return;
-    if (nextIndex === 4 && collected.zanahoria < GOALS.ZANAHORIA) return;
-
-    // Si se cumple la condición para avanzar
-    if (frostyModels[currentFrostyIndex]) {
-        frostyModels[currentFrostyIndex].visible = false;
-    }
-    currentFrostyIndex = nextIndex;
-    if (frostyModels[currentFrostyIndex]) {
-        frostyModels[currentFrostyIndex].visible = true;
-    }
-    console.log(`❄️ Muñeco de nieve avanzado a fase Frosty${currentFrostyIndex}`);
-}
-
-// Archivo: javaScript/game_nevado.js (Funciones de GameApi)
 function createRemoteHamster(socketId, username, initialPosition, isLocal = false) {
     if (isLocal) {
-        // El jugador local ya es la variable 'hamster' cargada.
-        // Si el hámster local aún no ha cargado, esto podría ser un problema de timing.
-        // Asumiendo que el hámster local ya cargó antes de que se llame esta función.
+        if (hamster && hamster.userData.label) {
+            hamster.remove(hamster.userData.label);
+            hamster.userData.label = null;
+        }
         return;
     }
     if (!hamster || remotePlayers.has(socketId)) return;
 
     const remoteHamster = hamster.clone();
-    remoteHamster.name = username;
-    remoteHamster.userData.socketId = socketId;
 
-    // 1. Clonar y cambiar color (Tu lógica de color rojo para diferenciar)
-    remoteHamster.traverse((child) => {
-        if (child.isMesh) {
-            // Revertir a material original si es necesario, o simplemente no clonar/cambiar el color
-            // Dejar el modelo con su material por defecto (si lo carga el clone)
-            // Si el modelo local no se modifica, el clone será igual.
-            // Si el hámster local tiene un material modificado por Three.js, podría ser mejor recargar/aplicar el material original.
-            // Por ahora, solo quitamos el cambio a rojo.
+    remoteHamster.traverse(child => {
+        if (child.name === 'player_label' || child.name === 'player_marker') {
+            remoteHamster.remove(child);
         }
     });
 
-    // 2. Agregar solo el nombre de usuario
-    const label = createUsernameLabel(username);
-    // POSICIÓN CORREGIDA: -5 en Y local
-     label.position.set(0, 0.8, 0.5);
-    remoteHamster.add(label);
-    remoteHamster.userData.label = label;
-    // ---------------------------------------------
+    if (remoteHamster.userData.label) {
+        remoteHamster.remove(remoteHamster.userData.label);
+        remoteHamster.userData.label = null;
+    }
 
-    // 2. Posición inicial (Aleatoria o por defecto si no hay datos de red iniciales)
+    remoteHamster.name = username;
+    remoteHamster.userData.socketId = socketId;
+
+    const labelContainer = new THREE.Object3D();
+    labelContainer.name = 'label_container';
+
+    const label = createUsernameLabel(username);
+    label.name = 'player_label';
+
+    label.position.set(0, 1.3, 0);
+
+    labelContainer.add(label);
+
+    labelContainer.position.set(0, 0, 0.5);
+    remoteHamster.add(labelContainer);
+
+    remoteHamster.userData.labelContainer = labelContainer;
+    remoteHamster.userData.label = label;
+
     const randomX = Math.random() * 40 - 20;
     const randomZ = Math.random() * 40 - 20;
     const spawnY = HAMSTER_HEIGHT + MODEL_Y_OFFSET + floor.position.y;
 
     remoteHamster.position.set(randomX, spawnY, randomZ);
 
-    // Si el servidor enviara una posición inicial, úsala aquí:
     if (initialPosition && initialPosition.x !== undefined) {
         remoteHamster.position.set(initialPosition.x, initialPosition.y || spawnY, initialPosition.z);
     }
 
-    // 💡 IMPORTANTE: Almacenamos la posición objetivo para la interpolación
     remoteHamster.userData.targetPosition = remoteHamster.position.clone();
 
     scene.add(remoteHamster);
@@ -403,18 +642,16 @@ function removeRemoteHamster(socketId) {
     }
 }
 
-// ----------------------------------------------------
-// ## CICLO DE ANIMACIÓN
-// ----------------------------------------------------
-
-
 function animate() {
     requestAnimationFrame(animate);
 
     if (!juegoPausado) {
         updateHamsterMovement();
 
-        // Lógica de Envío Multijugador (solo si se mueve)
+        if (hamster && hamster.userData.labelContainer) {
+            hamster.userData.labelContainer.rotation.y = -hamster.rotation.y;
+        }
+
         if (hamster && isMoving) {
             if (typeof window.sendHamsterMovement === 'function') {
                 window.sendHamsterMovement({
@@ -427,40 +664,34 @@ function animate() {
         }
         remotePlayers.forEach(remoteHamster => {
             const target = remoteHamster.userData.targetPosition;
-            // Usamos lerp (interpolación lineal) para mover el modelo suavemente 
             remoteHamster.position.lerp(target, 0.2);
 
-            // --- ¡Añadir esta lógica de interpolación de rotación! ---
             const targetRotationY = remoteHamster.userData.targetRotationY;
             if (targetRotationY !== undefined) {
-                // Interpolación angular para rotación (evitar saltos al cruzar 0/2*PI)
                 remoteHamster.rotation.y = THREE.MathUtils.lerp(
                     remoteHamster.rotation.y,
                     targetRotationY,
-                    0.2 // Mismo factor de suavidad
+                    0.2
                 );
             }
-            // -----------------------------------------------------------
-
-            // Opcional: Rotar el modelo para simular la dirección
-            // remoteHamster.lookAt(target); // (Esta línea se puede eliminar si se usa lerp de rotación)
+            if (remoteHamster.userData.labelContainer) {
+                remoteHamster.userData.labelContainer.rotation.y = -remoteHamster.rotation.y;
+            }
         });
 
-        // Recalcular Box3s (solo los activos)
+        if (snowball && snowballBox) snowballBox.setFromObject(snowball);
+
         if (hamster) hamsterBox.setFromObject(hamster);
         ramas.forEach(item => { if (item.mesh) item.box.setFromObject(item.mesh); });
         piedritas.forEach(item => { if (item.mesh) item.box.setFromObject(item.mesh); });
         if (zanahoria && zanahoria.mesh) zanahoria.box.setFromObject(zanahoria.mesh);
-        if (snowball) snowballBox.setFromObject(snowball);
 
-        // Animación de rotación para objetos recolectables
         ramas.forEach(item => { if (item.mesh) item.mesh.rotation.y += 0.01; });
         piedritas.forEach(item => { if (item.mesh) item.mesh.rotation.y += 0.01; });
         if (zanahoria && zanahoria.mesh) zanahoria.mesh.rotation.y += 0.01;
 
 
         if (hamster) {
-            // Lógica de cámara (omitiendo detalles)
             if (cameraMode === 0) {
                 const desiredPosition = new THREE.Vector3(
                     hamster.position.x,
@@ -489,19 +720,13 @@ function animate() {
             }
         }
 
-        // Lógica de Colisión principal
         checkPickupCollision();
         checkDeliveryCollision();
-        checkFrostyCollision();
     }
 
     renderer.render(scene, camera);
 }
 
-
-// ----------------------------------------------------
-// ## EXPOSICIÓN DE LA API DE JUEGO (GLOBAL)
-// ----------------------------------------------------
 window.GameApi = {
     createRemoteHamster,
     updateRemoteHamsterPosition,
@@ -514,7 +739,7 @@ window.GameApi = {
 };
 
 document.addEventListener('keydown', (event) => {
-    if (!hamster || juegoPausado) return; // Añadido chequeo de pausa
+    if (!hamster || juegoPausado) return;
 
     switch (event.key.toLowerCase()) {
         case 'w': moveState.forward = true; break;
@@ -524,11 +749,13 @@ document.addEventListener('keydown', (event) => {
         case 'arrowleft': hamster.rotation.y += turnSpeed * 10; break;
         case 'arrowright': hamster.rotation.y -= turnSpeed * 10; break;
         case 'c': cameraMode = (cameraMode + 1) % 2; break;
+        case 'l': dropCarriedItem(); break;
+        case 'k': pickUpSnowball(); break;
     }
 });
 
 document.addEventListener('keyup', (event) => {
-    if (!hamster || juegoPausado) return; // Añadido chequeo de pausa
+    if (!hamster || juegoPausado) return;
 
     switch (event.key.toLowerCase()) {
         case 'w': moveState.forward = false; break;
@@ -546,14 +773,13 @@ window.addEventListener('resize', () => {
 
 document.addEventListener('DOMContentLoaded', updateUI);
 
-// --- Carga Inicial de Modelos (debe ejecutarse al final) ---
-
 const frostyPaths = [
     { obj: './models/nevado/frosty0.obj', mtl: './models/nevado/frosty0.mtl' },
     { obj: './models/nevado/frosty1.obj', mtl: './models/nevado/frosty1.mtl' },
     { obj: './models/nevado/frosty2.obj', mtl: './models/nevado/frosty2.mtl' },
     { obj: './models/nevado/frosty3.obj', mtl: './models/nevado/frosty3.mtl' },
     { obj: './models/nevado/frosty.obj', mtl: './models/nevado/frosty.mtl' }
+
 ];
 frostyPaths.forEach((path, index) => {
     loadModel(path.obj, path.mtl, {
@@ -569,13 +795,6 @@ frostyPaths.forEach((path, index) => {
     });
 });
 
-
-
-
-// ... (Tu código de carga de loadModel para Hamster, Ramas, etc.) ...
-
-// game_nevado.js (Buscar y modificar la carga del hámster local)
-
 loadModel('./models/hamster.obj', './models/hamster.mtl', {
     scale: [15, 15, 15],
     position: [0, -3, 10],
@@ -585,19 +804,22 @@ loadModel('./models/hamster.obj', './models/hamster.mtl', {
     hamster.position.y = floor.position.y + HAMSTER_HEIGHT + MODEL_Y_OFFSET;
     scene.add(hamster);
 
-    // --- NUEVAS ADICIONES PARA EL JUGADOR LOCAL ---
     const username = window.localStorage.getItem('username') || 'Tú';
 
-    // 1. Agregar el círculo distintivo
     const marker = createLocalPlayerMarker();
-    hamster.add(marker); 
-    
+    hamster.add(marker);
+    const labelContainer = new THREE.Object3D();
+    labelContainer.name = 'label_container';
     const label = createUsernameLabel(username);
-   
-    label.position.set(0, 0.8, 0.5);
-    hamster.add(label);
+    label.name = 'player_label';
+    label.position.set(0, 1.3, 0);
+    labelContainer.add(label);
+    labelContainer.position.set(0, 0, 0.5);
+
+    hamster.add(labelContainer);
 
     hamster.userData.label = label;
+    hamster.userData.labelContainer = labelContainer;
 
     updateUI();
 });
@@ -639,8 +861,6 @@ loadModel('./models/nevado/zanahoria.obj', './models/nevado/zanahoria.mtl', {
     zanahoria = { mesh: obj, box: new THREE.Box3().setFromObject(obj), collected: false, type: 'zanahoria' };
     scene.add(obj);
 });
-
-
 
 
 animate();
