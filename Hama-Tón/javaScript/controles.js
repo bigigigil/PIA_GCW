@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const pauseBtn = document.getElementById("pauseBtn");
   const ajustesBtn = document.getElementById("ajustesBtn");
 
+
   const modalPausa = document.getElementById("modalPausa");
   const modalAjustes = document.getElementById("modalAjustes");
 
@@ -15,9 +16,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const explorarBtn = document.getElementById("explorarBtn");
   const continuarBtn = document.getElementById("continuarBtn");
 
+  const toggleVolumen = document.getElementById("toggleVolumen");
+  const toggleMusica = document.getElementById("toggleMusica");
+
+  const modalInicio = document.getElementById("modalInicio");
+  const easyModeBtn = document.getElementById("easyModeBtn");
+  const hardModeBtn = document.getElementById("hardModeBtn");
+
+if (modalInicio) modalInicio.style.display = "flex";
+
   const togglePause = (estado) => {
     if (window.GameApi && typeof window.GameApi.setPauseState === 'function') {
       window.GameApi.setPauseState(estado);
+    }
+  };
+
+  const resumeAudio = () => {
+    if (window.GameApi && typeof window.GameApi.resumeAudioContext === 'function') {
+      window.GameApi.resumeAudioContext();
     }
   };
 
@@ -25,11 +41,33 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.GameApi && typeof window.GameApi.isGamePaused === 'function') {
       return window.GameApi.isGamePaused();
     }
-    return false; 
+    return false;
   };
+
+const startGame = (difficulty) => {
+    if (window.GameApi && typeof window.GameApi.startGame === 'function') {
+      window.GameApi.startGame(difficulty); 
+
+      if (modalInicio) modalInicio.style.display = "none";
+    }
+  };
+
+  if (easyModeBtn) {
+    easyModeBtn.addEventListener("click", () => { 
+      modalInicio.style.display = "none";
+      startGame('EASY'); });
+    
+  }
+
+  if (hardModeBtn) {
+    hardModeBtn.addEventListener("click", () => {
+      modalInicio.style.display = "none";
+      startGame('HARD'); });
+  }
 
   if (pauseBtn) {
     pauseBtn.addEventListener("click", () => {
+      resumeAudio();
       togglePause(true);
       if (modalPausa) modalPausa.style.display = "flex";
     });
@@ -37,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (ajustesBtn) {
     ajustesBtn.addEventListener("click", () => {
+      resumeAudio();
       togglePause(true);
       if (modalAjustes) modalAjustes.style.display = "flex";
     });
@@ -58,6 +97,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (modalAjustes && event.target === modalAjustes) {
       togglePause(false); modalAjustes.style.display = "none";
     }
+
+    if (toggleVolumen) {
+      toggleVolumen.addEventListener("change", () => {
+        if (window.GameApi && typeof window.GameApi.setAudioVolume === 'function') {
+          window.GameApi.setAudioVolume('master', toggleVolumen.checked);
+        }
+      });
+    }
+
+    if (toggleMusica) {
+      toggleMusica.addEventListener("change", () => {
+        if (window.GameApi && typeof window.GameApi.setAudioVolume === 'function') {
+          window.GameApi.setAudioVolume('music', toggleMusica.checked);
+        }
+      });
+    }
+
   });
 
   document.addEventListener("keydown", (event) => {
@@ -108,7 +164,7 @@ function checkGameApiAndConnect() {
         pendingPlayersList.forEach(p => {
           window.GameApi.createRemoteHamster(p.id, p.username);
         });
-        pendingPlayersList = null; 
+        pendingPlayersList = null;
       }
     } else {
       setTimeout(checkGameApiAndConnect, 100);

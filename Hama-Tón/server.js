@@ -46,7 +46,7 @@ app.post('/login', async (req, res) => {
             return res.status(200).json({ 
                 success: true, 
                 message: 'Inicio de sesión exitoso.', 
-                redirect: '/nevado.html', // Usamos nevado.html para las pruebas
+                redirect: '/world.html',
                 userId: user.id,        
                 username: user.usuario   
             });

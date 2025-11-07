@@ -14,7 +14,15 @@
 </head>
 
 <body>
-
+<div class="modal-inicio" id="modalInicio">
+        <div class="modal-contenidoInicio">
+            <h2 class="modal-titulo">SELECCIONAR DIFICULTAD</h2>
+            <div class="modal-opciones">
+                <button class="modal-boton" id="easyModeBtn">FÁCIL (Elementos visibles, - área)</button>
+                <button class="modal-boton" id="hardModeBtn">DIFÍCIL (Sin ayuda, + área)</button>
+            </div>
+        </div>
+    </div>
     <div class="controles">
         <button class="btn-icon pause-btn" id="pauseBtn">
             ( ⏸ )
@@ -29,12 +37,17 @@
 
     <div class="Usuario">
         <div class="info">
-            <h1 id="usernameDisplay"></h1> <h2 id="livesDisplay">Vidas: 3</h2> <br>
-            <h2 id="objectiveDisplay" class="current-objective">Objetivo: BASE DE NIEVE</h2> <h2 id="carriedDisplay" class="carried-item">Llevas: Nada</h2> <br>
+            <h1 id="usernameDisplay"></h1>
+            <h2 id="livesDisplay">Vidas: 3</h2> <br>
+            <h2 id="objectiveDisplay" class="current-objective">Objetivo: BASE DE NIEVE</h2>
+            <h2 id="carriedDisplay" class="carried-item">Llevas: Nada</h2> <br>
             <h2 id="carrotDisplay">zanahoria: 0/1</h2>
             <h2 id="branchDisplay">ramas: 0/2</h2>
             <h2 id="stoneDisplay">piedritas: 0/10</h2>
-            <h2 id="gameMessage" class="game-message"></h2> </div>
+            <h2 id="gameMessage" class="game-message"></h2>
+        </div>
+        <button id="shareTwitterBtn" style="display:none;">Compartir en Twitter</button>
+
     </div>
 
     <div class="modal-pausa" id="modalPausa">
@@ -61,8 +74,9 @@
         </div>
     </div>
 
+    
     <div id="game-container" class="casaContainer">
-        </div>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
@@ -70,7 +84,7 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="javaScript/controles.js"></script>
-    <script src="javaScript/game_nevado.js"></script> 
+    <script src="javaScript/game_nevado.js"></script>
 </body>
 
 </html>

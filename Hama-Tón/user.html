@@ -17,38 +17,21 @@
 
 <body>
 
-  <!-- Barra superior -->
   <div class="topnav">
     <a id="foto" href="inicio.html"><img src="images/logo_borde.png" alt=""></a>
   </div>
 
-  <!-- Contenedor del perfil -->
   <div class="Nuevo_Usuario">
     <div class="new-container perfil-container">
       <h1>✧ Perfil de Usuario ✧</h1>
 
-      <!-- Info del usuario -->
-      <div class="perfil-info">
-        <img src="images/hamstersito.png" alt="Avatar" class="perfil-avatar">
-        <div class="perfil-datos">
-          <p><strong>Usuario:</strong> @roxanna_2005</p>
-          <p><strong>Amigos:</strong> 150</p>
-          <p><strong>Estado:</strong> En línea</p>
-        </div>
-      </div>
+    <div class="perfil-info">
+    <img src="images/hamstersito.png" alt="Avatar" class="perfil-avatar">
+    <div class="perfil-datos">
+          <p><strong>Usuario:</strong> <span id="perfil-username">Cargando...</span></p>
+    </div>
+   </div>
 
-      <!-- Lista de amigos -->
-      <div class="perfil-amigos">
-        <h2>Ranking Amigos</h2>
-        <ul>
-          <li>#1 hamstter</li>
-          <li>#2 capucchino</li>
-          <li>#3 moka</li>
-          <li>#4 chocolate</li>
-        </ul>
-      </div>
-
-      <!-- Botones -->
       <div class="perfil-botones">
         <button>Editar Perfil</button>
         <button>Agregar Amigo</button>
@@ -56,6 +39,7 @@
       </div>
     </div>
   </div>
-
+  <script src="javaScript/controles.js"></script> 
+  <script src="javaScript/perfil.js"></script> 
 </body>
 </html>
