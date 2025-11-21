@@ -728,86 +728,72 @@ function checkDeliveryCollision() {
  * @param {string} deliveredItem El nombre del objeto entregado.
  */
 function progressFrostyModel(deliveredItem) {
-    // Usamos '>' en lugar de '>=' para permitir que el índice final (4) ejecute el código de victoria.
+    // Validación inicial
     if (currentObjectiveIndex > OBJECT_ORDER.length - 1) return;
 
     if (deliveredItem === getRequiredItemName()) {
+        // 1. Avanzar objetivos
         currentObjectiveIndex++;
-
         const nextFrostyIndex = currentFrostyIndex + 1;
         const messageElement = document.getElementById('gameMessage');
-        
-        // Obtener el siguiente elemento DEspués de incrementar currentObjectiveIndex
-        const nextItem = getRequiredItemName(); 
 
+        // 2. Actualizar el modelo visualmente si existe un siguiente modelo
         if (nextFrostyIndex < frostyModels.length) {
-            
             updateFrostyModel(nextFrostyIndex);
-            
-            // Mensaje de progreso normal
-            if (messageElement) {
-                
-                // Si nextItem es undefined (victoria), mostrar un mensaje de finalización.
-                const nextObjectiveText = nextItem 
-                    ? `Siguiente: ${nextItem.toUpperCase().replace('_', ' ')}` 
-                    : '¡FINALIZANDO JUEGO!'; 
-                
-                messageElement.textContent = `¡Entrega de ${deliveredItem.toUpperCase()} exitosa! ${nextObjectiveText}`;
-                messageElement.style.color = 'black';
-                setTimeout(() => { if (messageElement.textContent.includes('exitosa')) messageElement.textContent = ''; }, 3000);
-            }
+        }
 
-        } else if (currentFrostyIndex === frostyModels.length - 1) { 
+        // 3. COMPROBAR VICTORIA: Si ya no quedan objetivos (hemos completado todo)
+        if (currentObjectiveIndex >= OBJECT_ORDER.length) {
             
-            // 1. Log de Consola
+            // --- LÓGICA DE VICTORIA ---
             console.log("¡Muñeco de Nieve Completo! ¡Ganaste! 🎉");
 
-            // 2. Mensaje de UI Inmediato (mientras se guarda la puntuación)
             if (messageElement) {
                  messageElement.textContent = "¡Muñeco de Nieve Completo! Guardando resultados...";
-                 messageElement.style.color = 'orange'; // Color temporal
+                 messageElement.style.color = 'orange';
             }
 
             winSound.play();
             showConfetti();
             
-            // --- Lógica de PUNTUACIÓN Y GUARDADO ---
             const { score, seedsGained } = calculateScoreAndSeeds();
             const username = window.localStorage.getItem('username') || 'Tú';
             const diffName = currentDifficulty.name;
-
-            // Definir el mensaje simple de compartir antes de la promesa
             const simpleShareText = `¡${username} ganó en Hama-Tón en modo ${diffName} completando el muñeco de nieve! ¡Juega ahora!`;
 
-            // Se ejecuta la promesa asíncrona (guardado)
+            // Guardar en Base de Datos
             saveScore(LIVES, seedsGained).then(success => {
-                
                 const finalMessage = `¡GANASTE FELICIDADES!✧｡٩(ˊᗜˋ)و✧*｡ Semillas ganadas: ${new Intl.NumberFormat('es-MX').format(seedsGained)}`;
                 
                 if (messageElement) {
                      messageElement.textContent = finalMessage;
                      messageElement.style.color = 'green';
                 }
-                
                 showShareButton(simpleShareText);
                 
             }).catch(error => {
-                // En caso de error de guardado
                 console.error("Error al guardar la puntuación:", error);
                 if (messageElement) {
-                    messageElement.textContent = `¡GANASTE, pero hubo un error al guardar la puntuación.`;
+                    messageElement.textContent = `¡GANASTE, pero hubo un error al guardar.`;
                     messageElement.style.color = 'red';
                 }
-                // Si falla el guardado, se sigue mostrando el botón de compartir
                 showShareButton(simpleShareText);
-                
             }).finally(() => {
-                // 5. Pausar el juego y actualizar la UI (se ejecuta siempre al final del flujo asíncrono)
                 juegoPausado = true;
                 updateUI();
             });
+
+        } else {
+            // --- PROGRESO NORMAL (Si no es victoria aún) ---
+            const nextItem = getRequiredItemName(); 
+            if (messageElement) {
+                messageElement.textContent = `¡Entrega de ${deliveredItem.toUpperCase()} exitosa! Siguiente: ${nextItem.toUpperCase().replace('_', ' ')}`;
+                messageElement.style.color = 'black';
+                setTimeout(() => { if (messageElement.textContent.includes('exitosa')) messageElement.textContent = ''; }, 3000);
+            }
         }
 
+        // Limpiar estado de carga
         carried.type = null;
         carried.count = 0;
         if (carriedModel) {
@@ -1019,6 +1005,7 @@ function showConfetti(duration = 5000) {
 function animate() {
     requestAnimationFrame(animate);
 
+    // 1. LÓGICA QUE SE DETIENE AL PAUSAR (Movimiento del hámster, colisiones, etc.)
     if (!juegoPausado) {
         updateHamsterMovement();
 
@@ -1065,7 +1052,6 @@ function animate() {
         });
 
         if (snowball && snowballBox) snowballBox.setFromObject(snowball);
-
         if (hamster) hamsterBox.setFromObject(hamster);
 
         if (hamster) {
@@ -1076,22 +1062,16 @@ function animate() {
                     hamster.position.z + 100
                 );
                 camera.position.lerp(desiredPosition, 0.1);
-
                 const lookTarget = new THREE.Vector3(
                     hamster.position.x,
                     hamster.position.y + 10,
                     hamster.position.z
                 );
-
-                pines.forEach(pino => {
-                    if (pino.visible) pino.visible = false;
-                });
-
+                pines.forEach(pino => { if (pino.visible) pino.visible = false; });
                 camera.lookAt(lookTarget);
 
             } else if (cameraMode === 1 && frostyModels[currentFrostyIndex]) {
                 const frosty = frostyModels[currentFrostyIndex];
-
                 const desiredPosition = new THREE.Vector3(
                     frosty.position.x + 10,
                     frosty.position.y + 500,
@@ -1099,75 +1079,75 @@ function animate() {
                 );
                 camera.position.lerp(desiredPosition, 0.1);
                 camera.lookAt(frosty.position);
-
                 const lookTarget = new THREE.Vector3(
                     hamster.position.x + 5,
                     hamster.position.y + 5,
                     hamster.position.z + 5,
                 );
-
-                pines.forEach(pino => {
-                    if (!pino.visible) pino.visible = true;
-                });
-
+                pines.forEach(pino => { if (!pino.visible) pino.visible = true; });
                 camera.lookAt(lookTarget);
             }
         }
 
-        const snowPosAttr = snowParticles?.geometry?.attributes?.position;
-        if (snowParticles && snowPosAttr?.array) {
-            const positions = snowPosAttr.array;
-            const particleSpeed = 0.8;
-            const yRange = 300;
-
-            for (let i = 1; i < positions.length; i += 3) {
-                positions[i] -= particleSpeed;
-
-                if (positions[i] < -30) {
-                    positions[i] = yRange;
-                    positions[i - 1] = THREE.MathUtils.randFloatSpread(FOREST_BOUNDS * 2);
-                    positions[i + 1] = THREE.MathUtils.randFloatSpread(FOREST_BOUNDS * 2);
-                }
-            }
-            snowPosAttr.needsUpdate = true;
-        }
-
-        if (confettiParticles.length > 0) {
-            const GRAVITY = -9.8 * 0.1;
-            const DRAG = 0.98;
-            const deltaTime = 1 / 60;
-
-            confettiParticles.forEach(confettiSystem => {
-                const posAttr = confettiSystem.geometry.attributes.position;
-                const velAttr = confettiSystem.geometry.attributes.velocity;
-                const rotAttr = confettiSystem.geometry.attributes.rotation; 
-
-                if (!posAttr || !velAttr || !rotAttr) return;
-
-                const positions = posAttr.array;
-                const velocities = velAttr.array;
-                const rotations = rotAttr.array;
-
-                for (let i = 0; i < positions.length; i += 3) {
-                    velocities[i + 1] += GRAVITY * deltaTime; 
-                    
-                    velocities[i] *= DRAG;
-                    velocities[i + 1] *= DRAG;
-                    velocities[i + 2] *= DRAG;
-
-                    positions[i] += velocities[i] * deltaTime;
-                    positions[i + 1] += velocities[i + 1] * deltaTime;
-                    positions[i + 2] += velocities[i + 2] * deltaTime;
-
-                    rotations[i] += Math.sin(deltaTime * 5) * 0.1; 
-                }
-                posAttr.needsUpdate = true;
-                rotAttr.needsUpdate = true;
-            });
-        }
-
         checkPickupCollision();
         checkDeliveryCollision();
+
+    } // <--- ¡AQUÍ CIERRA LA LLAVE DE LA PAUSA!
+
+    // 2. LÓGICA VISUAL PERMANENTE (Se ejecuta SIEMPRE, incluso si ganaste/pausaste)
+    
+    // --- Nieve ---
+    const snowPosAttr = snowParticles?.geometry?.attributes?.position;
+    if (snowParticles && snowPosAttr?.array) {
+        const positions = snowPosAttr.array;
+        const particleSpeed = 0.8;
+        const yRange = 300;
+
+        for (let i = 1; i < positions.length; i += 3) {
+            positions[i] -= particleSpeed;
+
+            if (positions[i] < -30) {
+                positions[i] = yRange;
+                positions[i - 1] = THREE.MathUtils.randFloatSpread(FOREST_BOUNDS * 2);
+                positions[i + 1] = THREE.MathUtils.randFloatSpread(FOREST_BOUNDS * 2);
+            }
+        }
+        snowPosAttr.needsUpdate = true;
+    }
+
+    // --- Confeti ---
+    if (confettiParticles.length > 0) {
+        const GRAVITY = -9.8 * 0.1;
+        const DRAG = 0.98;
+        const deltaTime = 1 / 60;
+
+        confettiParticles.forEach(confettiSystem => {
+            const posAttr = confettiSystem.geometry.attributes.position;
+            const velAttr = confettiSystem.geometry.attributes.velocity;
+            const rotAttr = confettiSystem.geometry.attributes.rotation; 
+
+            if (!posAttr || !velAttr || !rotAttr) return;
+
+            const positions = posAttr.array;
+            const velocities = velAttr.array;
+            const rotations = rotAttr.array;
+
+            for (let i = 0; i < positions.length; i += 3) {
+                velocities[i + 1] += GRAVITY * deltaTime; 
+                
+                velocities[i] *= DRAG;
+                velocities[i + 1] *= DRAG;
+                velocities[i + 2] *= DRAG;
+
+                positions[i] += velocities[i] * deltaTime;
+                positions[i + 1] += velocities[i + 1] * deltaTime;
+                positions[i + 2] += velocities[i + 2] * deltaTime;
+
+                rotations[i] += Math.sin(deltaTime * 5) * 0.1; 
+            }
+            posAttr.needsUpdate = true;
+            rotAttr.needsUpdate = true;
+        });
     }
 
     renderer.render(scene, camera);

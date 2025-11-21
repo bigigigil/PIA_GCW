@@ -87,7 +87,7 @@ loadModel('./models/hamster.obj', './models/hamster.mtl', {
 
 
 loadModel('./models/futbol/pelota.obj', './models/futbol/pelota.mtl', {
-    scale: [1, 1, 1],
+    scale: [3, 3, 3],
     position: [0, floorY, 5], 
     rotation: [0.01, 0, 0],
 }, (obj) => { pelota = obj; });
