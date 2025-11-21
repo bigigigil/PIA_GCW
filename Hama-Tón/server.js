@@ -1,6 +1,5 @@
 const express = require('express');
-const { findUser } = require('./database');
-
+const { findUser, updateUserSeeds, getLeaderboard } = require('./database'); 
 const { createServer } = require('node:http');
 const { Server } = require('socket.io');
 const { join } = require('node:path');
@@ -144,7 +143,14 @@ io.on('connection', (socket) => {
 
 });
 
-
+app.get('/api/leaderboard', async (req, res) => {
+    try {
+        const topPlayers = await getLeaderboard();
+        res.json({ success: true, data: topPlayers });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error al obtener ranking' });
+    }
+});
 server.listen(3000, () => {
   console.log('server running at http://localhost:3000');
 });

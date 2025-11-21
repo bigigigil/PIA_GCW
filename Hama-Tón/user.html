@@ -7,40 +7,171 @@
   <title>Perfil de Usuario</title>
   <link rel="stylesheet" href="css/style_perfil.css">
   <link rel="stylesheet" href="css/style_login.css">
+  <link rel="stylesheet" href="css/style_modal.css">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Cherry+Bomb+One&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cherry+Bomb+One&display=swap" rel="stylesheet">
+
+  <style>
+    /* Estilos específicos para la tabla del Ranking dentro del Modal */
+    .ranking-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        color: #333;
+    }
+    .ranking-table th, .ranking-table td {
+        padding: 10px;
+        border-bottom: 2px solid #eee;
+        text-align: center;
+        font-size: 18px;
+    }
+    .ranking-table th {
+        background-color: #ffca28;
+        color: white;
+        text-shadow: 1px 1px 0 #bcaaa4;
+    }
+    .ranking-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    .ranking-table tr:nth-child(odd) {
+        background-color: #fff;
+    }
+    .modal-contenido {
+        background-color: white;
+        color: #333;
+        max-width: 500px;
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+    }
+  </style>
 </head>
 
 <body>
 
   <div class="topnav">
-    <a id="foto" href="inicio.html"><img src="images/logo_borde.png" alt=""></a>
+    <a id="foto" href="inicio.html"><img src="images/logo_borde.png" alt="Logo"></a>
   </div>
 
   <div class="Nuevo_Usuario">
     <div class="new-container perfil-container">
       <h1>✧ Perfil de Usuario ✧</h1>
 
-    <div class="perfil-info">
-    <img src="images/hamstersito.png" alt="Avatar" class="perfil-avatar">
-    <div class="perfil-datos">
+      <div class="perfil-info">
+        <img src="images/hamstersito.png" alt="Avatar" class="perfil-avatar">
+        <div class="perfil-datos">
           <p><strong>Usuario:</strong> <span id="perfil-username">Cargando...</span></p>
-    </div>
-   </div>
+          <p><strong>Semillas:</strong> <span id="perfil-seeds">0</span> 🌻</p>
+        </div>
+      </div>
 
       <div class="perfil-botones">
-        <!-- <button>Editar Perfil</button>-->
-       
-        <button>Ver Rankings</button>
-        <button>Cerrar Sesión</button>
+        <button id="openRankBtn">🏆 Ver Rankings</button>
+        <button onclick="window.location.href='inicio.html'">Cerrar Sesión</button>
+        <button onclick="window.location.href='casa.html'">Ir a Casa</button>
       </div>
     </div>
   </div>
-  <script src="javaScript/controles.js"></script> 
-  <script src="javaScript/auth/perfil.js"></script> 
+
+  <div class="modal-pausa" id="modalRanking" style="display: none;">
+      <div class="modal-contenido">
+          <button class="cerrar-modal" id="closeRankBtn" style="float: right; background:none; border:none; font-size:24px; cursor:pointer; color: #333;">✕</button>
+          <h2 class="modal-titulo" style="color: #5d4037; margin-top: 0;">🏆 TOP 10 SEMILLAS</h2>
+          
+          <div id="loadingRank">Cargando datos...</div>
+          
+          <table class="ranking-table" id="rankingTable" style="display: none;">
+              <thead>
+                  <tr>
+                      <th>#</th>
+                      <th>Usuario</th>
+                      <th>Semillas</th>
+                  </tr>
+              </thead>
+              <tbody id="rankingBody">
+                  </tbody>
+          </table>
+      </div>
+  </div>
+
+  <script src="javaScript/controles.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // 1. CARGAR DATOS DEL USUARIO
+        const username = localStorage.getItem('username') || 'Invitado';
+        const seeds = localStorage.getItem('seeds') || '0';
+        
+        const usernameSpan = document.getElementById('perfil-username');
+        const seedsSpan = document.getElementById('perfil-seeds');
+
+        if (usernameSpan) usernameSpan.textContent = username;
+        if (seedsSpan) seedsSpan.textContent = new Intl.NumberFormat('es-MX').format(seeds);
+
+        // 2. LÓGICA DEL MODAL DE RANKING
+        const modal = document.getElementById('modalRanking');
+        const openBtn = document.getElementById('openRankBtn');
+        const closeBtn = document.getElementById('closeRankBtn');
+        const tableBody = document.getElementById('rankingBody');
+        const loadingDiv = document.getElementById('loadingRank');
+        const table = document.getElementById('rankingTable');
+
+        if (openBtn) {
+            openBtn.addEventListener('click', async () => {
+                modal.style.display = 'flex'; // Mostrar modal centrado (flex viene del css de modal)
+                loadingDiv.style.display = 'block';
+                table.style.display = 'none';
+                tableBody.innerHTML = ''; 
+
+                try {
+                    // Petición al servidor para obtener el top 10
+                    const response = await fetch('/api/leaderboard');
+                    const result = await response.json();
+
+                    if (result.success) {
+                        result.data.forEach((player, index) => {
+                            const row = document.createElement('tr');
+                            
+                            // Asignar medallas a los 3 primeros
+                            let rankDisplay = index + 1;
+                            if (index === 0) rankDisplay = '🥇';
+                            if (index === 1) rankDisplay = '🥈';
+                            if (index === 2) rankDisplay = '🥉';
+
+                            row.innerHTML = `
+                                <td>${rankDisplay}</td>
+                                <td>${player.usuario}</td>
+                                <td>${new Intl.NumberFormat('es-MX').format(player.seeds)} 🌻</td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                        loadingDiv.style.display = 'none';
+                        table.style.display = 'table';
+                    } else {
+                        loadingDiv.textContent = 'Error al cargar ranking.';
+                    }
+                } catch (error) {
+                    console.error(error);
+                    loadingDiv.textContent = 'Error de conexión con el servidor.';
+                }
+            });
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+        }
+
+        // Cerrar modal si se hace clic fuera del contenido
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    });
+  </script>
 </body>
 </html>
