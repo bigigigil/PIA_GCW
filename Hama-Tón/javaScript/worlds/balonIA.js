@@ -1,10 +1,3 @@
-/**
- * @param {THREE.Object3D} hamster 
- * @param {THREE.Object3D} pelota 
- * @param {number} ballSpeed 
- * @param {number} floorY 
- * @param {number} ballRadius 
- */
 export function actualizarIA(hamster, pelota, ballSpeed, floorY, ballRadius) {
    
     if (!hamster || !pelota) return;

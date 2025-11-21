@@ -80,8 +80,8 @@ let isCarryingSnowball = false;
 const FOREST_BOUNDS = 300;
 
 const DIFFICULTY_SETTINGS = {
-    EASY: { BOUNDS: 250, LIGHTING: true },
-    HARD: { BOUNDS: 500, LIGHTING: false }
+    EASY: { BOUNDS: 250, LIGHTING: true, name: 'FÁCIL' }, 
+    HARD: { BOUNDS: 500, LIGHTING: false, name: 'DIFÍCIL' }
 };
 
 let currentDifficulty = DIFFICULTY_SETTINGS.EASY;
@@ -101,6 +101,64 @@ const cameraOffset = new THREE.Vector3(0, 5, -15);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x000000, 0);
 document.querySelector('.casaContainer').appendChild(renderer.domElement);
+
+// --- INICIO: Lógica de Puntuación/Semillas (ACTUALIZADA Y LIMPIA) ---
+const SEED_REWARDS_MAP = {
+    3: 500,
+    2: 300,
+    1: 100,
+    0: 0
+};
+
+function calculateScoreAndSeeds() {
+    const seedsBase = SEED_REWARDS_MAP[LIVES] || 0;
+    
+    // Multiplicador x2 si es modo HARD
+    const multiplier = currentDifficulty.name === 'DIFÍCIL' ? 2 : 1;
+    
+    const seedsGained = seedsBase * multiplier;
+
+    const score = (100 + (LIVES * 50)) * multiplier; 
+    
+    return { score, seedsGained };
+}
+
+async function saveScore(lives, seedsGained) {
+    const userId = window.localStorage.getItem('userId');
+    if (!userId) {
+        console.error('No se encontró el userId para guardar la puntuación.');
+        return false;
+    }
+
+    try {
+        const response = await fetch('/api/save-score', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ userId, lives, seedsGained }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            console.log(`Semillas y puntuación guardadas. Ganaste ${seedsGained} semillas.`);
+            
+            let currentSeeds = parseInt(window.localStorage.getItem('seeds') || '0');
+            currentSeeds += seedsGained;
+            window.localStorage.setItem('seeds', currentSeeds.toString());
+        
+            return true;
+        } else {
+            console.error('Fallo al guardar la puntuación:', result.message);
+            return false;
+        }
+    } catch (error) {
+        console.error('Error al enviar la puntuación:', error);
+        return false;
+    }
+}
+// --- FIN: Lógica de Puntuación/Semillas ---
 
 function getRandomPosition() {
     const x = (Math.random() * 2 - 1) * currentBounds;
@@ -134,9 +192,15 @@ function updateUI() {
     const objectiveElement = document.getElementById('objectiveDisplay');
     const messageElement = document.getElementById('gameMessage');
     const shareBtn = document.getElementById('shareTwitterBtn');
+    const seedsElement = document.getElementById('seedsDisplay');
 
     if (livesElement) {
         livesElement.textContent = `Vidas: ${LIVES}`;
+    }
+
+    if (seedsElement) {
+        const currentSeeds = window.localStorage.getItem('seeds') || '0';
+        seedsElement.textContent = `Semillas: ${new Intl.NumberFormat('es-MX').format(parseInt(currentSeeds))}`;
     }
 
     if (carrotElement) carrotElement.textContent = `zanahoria: ${collected.zanahoria}/${GOALS.ZANAHORIA}`;
@@ -166,14 +230,15 @@ function updateUI() {
         juegoPausado = true;
         if (shareBtn) shareBtn.style.display = 'none';
     } else if (currentFrostyIndex === frostyModels.length - 1) {
-        if (messageElement) messageElement.textContent = '¡GANASTE FELICIDADES!✧｡٩(ˊᗜˋ)و✧*｡';
-
-        const username = window.localStorage.getItem('username') || 'Tú';
-        const score = 100;
-        showShareButton(username, score);
+        // En victoria, el mensaje se establece de forma asíncrona dentro de progressFrostyModel, 
+        // pero aseguramos que el botón de compartir se muestre si la partida ya terminó.
+        if (shareBtn) shareBtn.style.display = 'inline-block';
     } else {
-
-        // if (shareBtn) shareBtn.style.display = 'none';
+        if (shareBtn) shareBtn.style.display = 'none';
+        // Si el juego está en curso, no sobrescribimos un mensaje temporal si existe
+        if (messageElement && !juegoPausado) {
+            messageElement.textContent = '';
+        }
     }
 }
 
@@ -448,6 +513,27 @@ function setCarriedModel(itemType) {
     });
 }
 
+function getRequiredItemName() {
+    return OBJECT_ORDER[currentObjectiveIndex];
+}
+
+function getCurrentFrostyName() {
+    return `Frosty${currentFrostyIndex}`;
+}
+
+function updateFrostyModel(index) {
+    if (frostyModels[currentFrostyIndex]) {
+        frostyModels[currentFrostyIndex].visible = false;
+    }
+    currentFrostyIndex = index;
+    if (frostyModels[currentFrostyIndex]) {
+        frostyModels[currentFrostyIndex].visible = true;
+    }
+    console.log(`❄️ Muñeco de nieve avanzado a fase ${getCurrentFrostyName()}`);
+    winSound.play();
+    if (snowball) snowball.visible = false;
+}
+
 function checkPickupCollision() {
     if (!hamster || !hamsterBox || isCarryingSnowball) return;
     if (carried.type && carried.count >= GOALS[carried.type.toUpperCase()]) return;
@@ -511,7 +597,7 @@ function checkDeliveryCollision() {
         let deliveredItem = carried.type || (isCarryingSnowball ? 'snowball_base' : null);
         let shouldProgress = false;
 
-        const expectedItem = OBJECT_ORDER[currentObjectiveIndex];
+        const expectedItem = getRequiredItemName();
 
         if (deliveredItem === expectedItem) {
 
@@ -523,32 +609,33 @@ function checkDeliveryCollision() {
                         if (snowball) scene.remove(snowball);
                     } else if (isCarryingSnowball && !isSnowballReady) {
                         LIVES--;
+                        // Llama a progressFrostyModel para manejar la lógica de penalización
+                        progressFrostyModel('incorrect'); 
                     }
                     break;
                 case 'ramas':
 
-                    if (currentObjectiveIndex === 1 && carried.type === 'ramas' && carried.count === GOALS.RAMAS) {
+                    if (carried.type === 'ramas' && carried.count === GOALS.RAMAS) {
                         collected.ramas = carried.count;
                         shouldProgress = true;
                     }
-                    else if (currentObjectiveIndex === 1 && carried.type === 'ramas' && carried.count < GOALS.RAMAS) {
+                    else if (carried.type === 'ramas' && carried.count < GOALS.RAMAS) {
                         console.log(`Fallo parcial: Necesitas ${GOALS.RAMAS} ramas. Llevas ${carried.count}.`);
-
                         return;
                     }
                     break;
                 case 'piedritas':
-                    if (currentObjectiveIndex === 2 && carried.type === 'piedritas' && carried.count === GOALS.PIEDRITAS) {
+                    if (carried.type === 'piedritas' && carried.count === GOALS.PIEDRITAS) {
                         collected.piedritas = carried.count;
                         shouldProgress = true;
                     }
-                    else if (currentObjectiveIndex === 2 && carried.type === 'piedritas' && carried.count < GOALS.PIEDRITAS) {
+                    else if (carried.type === 'piedritas' && carried.count < GOALS.PIEDRITAS) {
                         console.log(`Fallo parcial: Necesitas ${GOALS.PIEDRITAS} piedritas. Llevas ${carried.count}.`);
                         return;
                     }
                     break;
                 case 'zanahoria':
-                    if (currentObjectiveIndex === 3 && carried.type === 'zanahoria' && carried.count === GOALS.ZANAHORIA) {
+                    if (carried.type === 'zanahoria' && carried.count === GOALS.ZANAHORIA) {
                         collected.zanahoria = carried.count;
                         shouldProgress = true;
                     }
@@ -581,7 +668,7 @@ function checkDeliveryCollision() {
                 if (deliveredType === 'ramas' || deliveredType === 'piedritas' || deliveredType === 'zanahoria') {
                     const listToRespawn = deliveredType === 'ramas' ? ramas :
                         deliveredType === 'piedritas' ? piedritas :
-                            deliveredType === 'zanahoria' ? [zanahoria] : [];
+                            deliveredItem === 'zanahoria' ? [zanahoria] : [];
 
                     listToRespawn.forEach(item => {
                         if (item.collected) {
@@ -636,32 +723,89 @@ function checkDeliveryCollision() {
     }
 }
 
-
+/**
+ * Procesa la entrega de un objeto, haciendo avanzar el modelo Frosty si es el correcto.
+ * @param {string} deliveredItem El nombre del objeto entregado.
+ */
 function progressFrostyModel(deliveredItem) {
-    if (currentFrostyIndex >= frostyModels.length - 1) return;
+    // Usamos '>' en lugar de '>=' para permitir que el índice final (4) ejecute el código de victoria.
+    if (currentObjectiveIndex > OBJECT_ORDER.length - 1) return;
 
-    if (deliveredItem === OBJECT_ORDER[currentObjectiveIndex]) {
+    if (deliveredItem === getRequiredItemName()) {
         currentObjectiveIndex++;
 
         const nextFrostyIndex = currentFrostyIndex + 1;
+        const messageElement = document.getElementById('gameMessage');
+        
+        // Obtener el siguiente elemento DEspués de incrementar currentObjectiveIndex
+        const nextItem = getRequiredItemName(); 
 
         if (nextFrostyIndex < frostyModels.length) {
-            if (frostyModels[currentFrostyIndex]) {
-                frostyModels[currentFrostyIndex].visible = false;
+            
+            updateFrostyModel(nextFrostyIndex);
+            
+            // Mensaje de progreso normal
+            if (messageElement) {
+                
+                // Si nextItem es undefined (victoria), mostrar un mensaje de finalización.
+                const nextObjectiveText = nextItem 
+                    ? `Siguiente: ${nextItem.toUpperCase().replace('_', ' ')}` 
+                    : '¡FINALIZANDO JUEGO!'; 
+                
+                messageElement.textContent = `¡Entrega de ${deliveredItem.toUpperCase()} exitosa! ${nextObjectiveText}`;
+                messageElement.style.color = 'black';
+                setTimeout(() => { if (messageElement.textContent.includes('exitosa')) messageElement.textContent = ''; }, 3000);
             }
-            currentFrostyIndex = nextFrostyIndex;
-            if (frostyModels[currentFrostyIndex]) {
-                frostyModels[currentFrostyIndex].visible = true;
-            }
-            console.log(`❄️ Muñeco de nieve avanzado a fase Frosty${currentFrostyIndex}`);
-            winSound.play();
-            if (snowball) snowball.visible = false;
-        } else if (currentFrostyIndex === frostyModels.length - 1) {
-            winSound.play();
-            showConfetti();
+
+        } else if (currentFrostyIndex === frostyModels.length - 1) { 
+            
+            // 1. Log de Consola
             console.log("¡Muñeco de Nieve Completo! ¡Ganaste! 🎉");
 
+            // 2. Mensaje de UI Inmediato (mientras se guarda la puntuación)
+            if (messageElement) {
+                 messageElement.textContent = "¡Muñeco de Nieve Completo! Guardando resultados...";
+                 messageElement.style.color = 'orange'; // Color temporal
+            }
 
+            winSound.play();
+            showConfetti();
+            
+            // --- Lógica de PUNTUACIÓN Y GUARDADO ---
+            const { score, seedsGained } = calculateScoreAndSeeds();
+            const username = window.localStorage.getItem('username') || 'Tú';
+            const diffName = currentDifficulty.name;
+
+            // Definir el mensaje simple de compartir antes de la promesa
+            const simpleShareText = `¡${username} ganó en Hama-Tón en modo ${diffName} completando el muñeco de nieve! ¡Juega ahora!`;
+
+            // Se ejecuta la promesa asíncrona (guardado)
+            saveScore(LIVES, seedsGained).then(success => {
+                
+                const finalMessage = `¡GANASTE FELICIDADES!✧｡٩(ˊᗜˋ)و✧*｡ Semillas ganadas: ${new Intl.NumberFormat('es-MX').format(seedsGained)}`;
+                
+                if (messageElement) {
+                     messageElement.textContent = finalMessage;
+                     messageElement.style.color = 'green';
+                }
+                
+                showShareButton(simpleShareText);
+                
+            }).catch(error => {
+                // En caso de error de guardado
+                console.error("Error al guardar la puntuación:", error);
+                if (messageElement) {
+                    messageElement.textContent = `¡GANASTE, pero hubo un error al guardar la puntuación.`;
+                    messageElement.style.color = 'red';
+                }
+                // Si falla el guardado, se sigue mostrando el botón de compartir
+                showShareButton(simpleShareText);
+                
+            }).finally(() => {
+                // 5. Pausar el juego y actualizar la UI (se ejecuta siempre al final del flujo asíncrono)
+                juegoPausado = true;
+                updateUI();
+            });
         }
 
         carried.type = null;
@@ -1226,21 +1370,27 @@ loadModel(frostyPaths[0].obj, frostyPaths[0].mtl, {
     scene.add(snowball);
 });
 
-
-function showShareButton(username, score) {
+function showShareButton(fullText) { 
     const btn = document.getElementById('shareTwitterBtn');
     if (btn) {
         btn.style.display = 'inline-block';
-
-        btn.onclick = () => {
-            shareOnTwitter(username, score);
+        
+        btn.setAttribute('data-share-text', fullText); 
+        
+        btn.onclick = (event) => {
+            event.preventDefault(); 
+            const textToShare = btn.getAttribute('data-share-text');
+            shareOnTwitter(textToShare);
+            return false;
         };
     }
 }
 
-function shareOnTwitter(username, score) {
-    const text = encodeURIComponent(`¡${username} ganó en Hama-Tón con ${score} puntos! ¡Completa el muñeco de nieve! ☃️ #HamaTon #ThreeJS`);
+function shareOnTwitter(fullText) {
+    
+    const text = encodeURIComponent(`${fullText} ¡Completa el muñeco de nieve! ☃️ #HamaTon #ThreeJS`);
     const url = `https://x.com/intent/post?text=${text}`;
+    
     window.open(url, '_blank');
 }
 
@@ -1326,4 +1476,15 @@ audioLoader.load('./audio/ta-da!.mp3', function (buffer) {
     winSound.setVolume(1.0);
 });
 
+function activateTestShareButton() {
+    
+    const username = window.localStorage.getItem('username') || 'Tú';
+    
+    const testMessage = `¡${username} está jugando Hama-Tón! :D`;
+    
+    showShareButton(testMessage);
+    console.log("TEST: El botón de Twitter ha sido activado con un mensaje de prueba.");
+}
+
 animate();
+activateTestShareButton();

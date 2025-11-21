@@ -92,8 +92,6 @@ loadModel('./models/futbol/pelota.obj', './models/futbol/pelota.mtl', {
     rotation: [0.01, 0, 0],
 }, (obj) => { pelota = obj; });
 
-
-// --- Configurar Teclas (Controles del Hámster) ---
 document.addEventListener('keydown', (event) => {
     if (!hamster) return;
 
@@ -132,8 +130,6 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
-
-// --- Bucle de Animación (Game Loop) ---
 function animate() {
     requestAnimationFrame(animate);
 

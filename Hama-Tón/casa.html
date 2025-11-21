@@ -8,7 +8,262 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Cherry+Bomb+One&display=swap" rel="stylesheet">
 
-  <!--<link rel="stylesheet" href="style.css">-->
+  <link rel="stylesheet" href="css/style_controles.css">
+  <link rel="stylesheet" href="css/style_modal.css">
+  <link rel="stylesheet" href="css/style_casa.css">
+</head>
+
+<body>
+
+  <div class="controles">
+    <button class="btn-icon pause-btn" id="pauseBtn">
+      ( ⏸ )
+      <span class="btn-text">PAUSA</span>
+    </button>
+
+    <button class="btn-icon ajustes-btn" id="ajustesBtn">
+      (⚙️)
+      <span class="btn-text">AJUSTES</span>
+    </button>
+  </div>
+
+  <div class="Usuario">
+    <div class="info">
+      <h1 id="usernameDisplay">* Cargando Usuario *</h1>
+      <br>
+      <h2>RECORD: <span id="recordDisplay">--</span></h2>
+      <h2>SEMILLAS: <span id="seedsDisplay">--</span></h2>
+      <h2>Mundo Favorito: Nevado</h2>
+    </div>
+  </div>
+
+  <div class="modal-pausa" id="modalPausa">
+    <div class="modal-contenido">
+      <button class="cerrar-modal" id="cerrarModalPausa">✕</button>
+      <h2 class="modal-titulo">JUEGO EN PAUSA</h2>
+      <div class="modal-opciones">
+        <button class="modal-boton" id="continuarBtn">Continuar</button>
+          <button class="modal-boton" id="explorarBtn">Explorar Mundos</button>
+        <button class="modal-boton" id="salirBtn">Salir del Juego</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-ajustes" id="modalAjustes">
+    <div class="modal-contenidoAjustes">
+      <button class="cerrar-modal" id="cerrarModalAjustes">✕</button>
+      <h2 class="modal-titulo">AJUSTES</h2>
+      <div class="modal-opciones">
+        <label><input type="checkbox" id="toggleVolumen" checked> Sonido</label>
+        <label><input type="checkbox" id="toggleMusica" checked> Música</label>
+        <label>Brillo <input type="range" id="brilloRange" min="0" max="2" step="0.1" value="1"></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="casaContainer">
+    </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+
+  <script>
+    // --- escena, cámara y render ---
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000, 0); // Fondo transparente
+    document.querySelector('.casaContainer').appendChild(renderer.domElement);
+
+    camera.position.z = 15;
+
+    // luces
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    keyLight.position.set(20, 20, 20);
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0xffffff, 1);
+    fillLight.position.set(-20, 10, 10);
+    scene.add(fillLight);
+
+    // suelo textura
+    // Cargar textura
+    const textureLoader = new THREE.TextureLoader();
+    const floorTexture = textureLoader.load('./models/textures/piso.png');
+    // Para que se repita muchas veces en el plano
+    floorTexture.wrapS = THREE.RepeatWrapping;
+    floorTexture.wrapT = THREE.RepeatWrapping;
+    floorTexture.repeat.set(40, 10); // cantidad de repeticiones (ajusta a gusto)
+
+    // Piso (un plano grande que hace de suelo)
+    const floorGeometry = new THREE.PlaneGeometry(400, 100); // tamaño grande
+    const floorMaterial = new THREE.MeshStandardMaterial({
+      map: floorTexture,
+      //color: 0xffa31a,
+      roughness: 10,
+      metalness: 0,
+    });
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = (-Math.PI / 2)+0.05; // ponerlo plano en el eje XZ
+    floor.position.y = -10; // un poquito más abajo que el hamster
+    scene.add(floor);
+
+
+    /* CARGAR MODELoS 1/2*/
+    // declar global modelos
+    let hamster;
+
+    function loadModel(objPath, mtlPath, options = {}, onLoad) {
+      const mtlLoader = new THREE.MTLLoader();
+      mtlLoader.load(mtlPath, (materials) => {
+        materials.preload();
+
+        const objLoader = new THREE.OBJLoader();
+        objLoader.setMaterials(materials);
+        objLoader.load(objPath, (obj) => {
+          if (options.scale) obj.scale.set(...options.scale);
+          if (options.position) obj.position.set(...options.position);
+          if (options.rotation) obj.rotation.set(...options.rotation);
+
+          obj.traverse((child) => {
+            if (child.isMesh) {
+              child.material = new THREE.MeshBasicMaterial({
+                map: child.material.map,
+              });
+            }
+          });
+
+          scene.add(obj);
+
+          if (onLoad) onLoad(obj); 
+        });
+      });
+    }
+
+    /* CARGAR MODELoS 2/2*/
+
+    loadModel('./models/hamster.obj', './models/hamster.mtl', {
+      scale: [15, 15, 15],
+      position: [0, -3, -1],
+      rotation: [0.01, 0, 0],
+    }, (obj) => { hamster = obj; });
+
+
+    /* configurar teclas*/
+    document.addEventListener('keydown', (event) => {
+      if (!hamster) return;
+
+      const speed = 1; // velocidad de movimiento
+      const turnSpeed = 0.5; // velocidad de rotación
+
+      switch (event.key) {
+        // Rotar a izquierda/derecha
+        case 'ArrowLeft':
+          hamster.rotation.y += turnSpeed;
+          break;
+        case 'ArrowRight':
+          hamster.rotation.y -= turnSpeed;
+          break;
+        case 'ArrowUp':
+          hamster.rotation.y = -9.4;
+          break;
+
+        case 'ArrowDown': hamster.rotation.y = 0; break;
+        // Avanzar/retroceder según su frente
+        case 'w':
+          hamster.position.x += Math.sin(hamster.rotation.y) * speed;
+          hamster.position.z += Math.cos(hamster.rotation.y) * speed;
+          break;
+        case 's':
+          hamster.position.x -= Math.sin(hamster.rotation.y) * speed;
+          hamster.position.z -= Math.cos(hamster.rotation.y) * speed;
+          break;
+
+        // Strafe (opcional) 
+        case 'a':
+          hamster.position.x += Math.cos(hamster.rotation.y) * speed;
+          hamster.position.z -= Math.sin(hamster.rotation.y) * speed;
+          break;
+        case 'd':
+          hamster.position.x -= Math.cos(hamster.rotation.y) * speed;
+          hamster.position.z += Math.sin(hamster.rotation.y) * speed;
+          break;
+      }
+    });
+
+    // animación
+    function animate() {
+      requestAnimationFrame(animate);
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // ajuste al redimensionar
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // --- NUEVO SCRIPT para cargar la información del usuario ---
+    function loadAndDisplayUserData() {
+        const username = localStorage.getItem('username');
+        const seeds = localStorage.getItem('seeds');
+        const record = localStorage.getItem('record') || '--'; // Asume que 'record' podría guardarse después del login/juego.
+
+        // 1. Mostrar nombre de usuario
+        const usernameElement = document.getElementById('usernameDisplay');
+        if (usernameElement) {
+            usernameElement.textContent = `* ${username || 'Invitado'} *`;
+        }
+
+        // 2. Mostrar semillas
+        const seedsElement = document.getElementById('seedsDisplay');
+        if (seedsElement) {
+            // Formatea el número con separadores de miles
+            const formattedSeeds = new Intl.NumberFormat().format(seeds || 0); 
+            seedsElement.textContent = formattedSeeds;
+        }
+
+        // 3. Mostrar récord
+        const recordElement = document.getElementById('recordDisplay');
+        if (recordElement) {
+            recordElement.textContent = record;
+        }
+        
+        // Bonus: Verifica si el usuario está logeado y si no, debería redirigir o mostrar un mensaje
+        if (!username) {
+             console.log("Usuario no autenticado, cargando como invitado.");
+             // Si quieres redirigir si no está logeado, descomenta la siguiente línea:
+             // window.location.href = 'inicio.html'; 
+        }
+    }
+    
+    // Ejecuta la función cuando el DOM esté completamente cargado.
+    document.addEventListener('DOMContentLoaded', loadAndDisplayUserData);
+
+  </script>
+
+  <script src="javaScript/controles.js"></script>
+
+</body>
+
+</html>
+<!--
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>casa | Hama-tón ٩(ˊᗜˋ*)و .ᐟ.ᐟ</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cherry+Bomb+One&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="css/style_controles.css">
   <link rel="stylesheet" href="css/style_modal.css">
   <link rel="stylesheet" href="css/style_casa.css">
@@ -62,10 +317,9 @@
   </div>
 
   <div class="casaContainer">
-    <!-- Three.js se renderizará aquí -->
+   
   </div>
 
-  <!-- Importación de Three.js desde CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
@@ -219,3 +473,5 @@
 </body>
 
 </html>
+
+-->
