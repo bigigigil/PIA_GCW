@@ -1,9 +1,8 @@
 const express = require('express');
-const { findUser, updateUserSeeds, getLeaderboard } = require('./database'); 
 const { createServer } = require('node:http');
 const { Server } = require('socket.io');
 const { join } = require('node:path');
-
+const { registerUser, findUser, updateUserSeeds, getLeaderboard, getUserById } = require('./database');
 const app = express();
 
 app.use(express.urlencoded({ extended: true })); 
@@ -23,7 +22,6 @@ app.get('/', (req, res) => {
 app.use(express.static(__dirname));
 
 app.post('/login', async (req, res) => {
-    // ... (Tu código de login, sin cambios)
     const { usuario, password } = req.body;
 
     if (!usuario || !password) {
@@ -143,6 +141,8 @@ io.on('connection', (socket) => {
 
 });
 
+
+
 app.get('/api/leaderboard', async (req, res) => {
     try {
         const topPlayers = await getLeaderboard();
@@ -151,6 +151,62 @@ app.get('/api/leaderboard', async (req, res) => {
         res.status(500).json({ success: false, message: 'Error al obtener ranking' });
     }
 });
+
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+    const user = await findUser(username);
+
+    if (user && user.password === password) {
+        // ¡IMPORTANTE! Enviamos 'seeds' al frontend
+        res.json({ 
+            success: true, 
+            userId: user.id, 
+            username: user.usuario,
+            seeds: user.seeds 
+        });
+    } else {
+        res.json({ success: false, message: 'Credenciales incorrectas' });
+    }
+});
+
+// --- ENDPOINT GUARDAR PUNTUACIÓN ---
+app.post('/api/save-score', async (req, res) => {
+    const { userId, seedsGained } = req.body;
+    const result = await updateUserSeeds(userId, seedsGained);
+
+    if (result.success) {
+        // Devolvemos el nuevo total real de la BD
+        res.json({ success: true, newTotal: result.newTotal });
+    } else {
+        res.status(500).json({ success: false, message: 'Error al guardar' });
+    }
+});
+
+// --- ENDPOINT OBTENER DATOS DE USUARIO (Para Casa/Perfil) ---
+app.get('/api/user/:id', async (req, res) => {
+    const user = await getUserById(req.params.id);
+    if (user) {
+        res.json({ success: true, seeds: user.seeds, username: user.usuario });
+    } else {
+        res.status(404).json({ success: false });
+    }
+});
+
+// --- ENDPOINT RANKING ---
+app.get('/api/leaderboard', async (req, res) => {
+    const topPlayers = await getLeaderboard();
+    res.json({ success: true, data: topPlayers });
+});
+
+app.post('/api/register', async (req, res) => {
+    const { username, password } = req.body;
+    const success = await registerUser(username, password);
+    res.json({ success });
+});
+
 server.listen(3000, () => {
   console.log('server running at http://localhost:3000');
 });
+
+
+

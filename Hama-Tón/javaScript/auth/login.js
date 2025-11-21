@@ -24,7 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     localStorage.setItem('userId', result.userId);
                     localStorage.setItem('username', result.username);
-                    localStorage.setItem('seeds', result.seeds); // <--- Línea añadida: Guarda las semillas
+                    const seeds = result.seeds !== undefined ? result.seeds : 0;
+                    window.localStorage.setItem('seeds', seeds);
                     localStorage.setItem('currentWorld', result.redirect);
                     window.location.href = result.redirect;
                 } else {

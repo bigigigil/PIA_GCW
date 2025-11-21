@@ -247,6 +247,31 @@
 
   </script>
 
+<script>
+    // Script para sincronizar semillas frescas de la base de datos
+    document.addEventListener('DOMContentLoaded', async () => {
+        const userId = localStorage.getItem('userId');
+        const seedsDisplay = document.getElementById('perfil-seeds'); // Asegúrate que el ID coincida en tu HTML
+
+        if (userId) {
+            try {
+                const response = await fetch(`/api/user/${userId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Actualizamos localStorage y la UI
+                    localStorage.setItem('seeds', data.seeds);
+                    if(seedsDisplay) {
+                         seedsDisplay.textContent = new Intl.NumberFormat('es-MX').format(data.seeds);
+                    }
+                }
+            } catch (e) {
+                console.error("No se pudieron cargar las semillas frescas");
+            }
+        }
+    });
+</script>
+
   <script src="javaScript/controles.js"></script>
 
 </body>
