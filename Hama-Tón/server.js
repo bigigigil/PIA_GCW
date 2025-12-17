@@ -16,7 +16,7 @@ const userSocketMap = new Map(); // Mapea userId -> { socketId, username, world 
 const socketUserMap = new Map(); // Mapea socketId -> userId
 
 app.get('/', (req, res) => {
-  res.sendFile(join(__dirname, 'inicio.html'));
+  res.sendFile(join(__dirname, 'index.html'));
 });
 
 app.use(express.static(__dirname));

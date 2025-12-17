@@ -85,7 +85,7 @@ const startGame = (difficulty) => {
   if (cerrarModalAjustes) { cerrarModalAjustes.addEventListener("click", () => { togglePause(false); if (modalAjustes) modalAjustes.style.display = "none"; }); }
   if (continuarBtn) { continuarBtn.addEventListener("click", () => { togglePause(false); if (modalPausa) modalPausa.style.display = "none"; }); }
 
-  if (salirBtn) { salirBtn.addEventListener("click", () => { window.location.href = "inicio.html"; }); }
+  if (salirBtn) { salirBtn.addEventListener("click", () => { window.location.href = "index.html"; }); }
   if (explorarBtn) { explorarBtn.addEventListener("click", () => { window.location.href = "world.html"; }); }
   if (casaBtn) { casaBtn.addEventListener("click", () => { window.location.href = "casa.html"; }); }
   if (reiniciarBtn) { reiniciarBtn.addEventListener("click", () => { window.location.href = "world.html"; }); }
@@ -171,7 +171,7 @@ function checkGameApiAndConnect() {
     }
   } else {
     console.warn('Sesión no encontrada. Redirigiendo a login.');
-    window.location.href = "inicio.html";
+    window.location.href = "index.html";
   }
 }
 

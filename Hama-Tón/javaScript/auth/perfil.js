@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         alert('No has iniciado sesión. Por favor, inicia sesión para ver tu perfil.');
 
-        window.location.href = 'inicio.html'; 
+        window.location.href = 'index.html'; 
     }
 
     const logoutButton = document.querySelector('.perfil-botones button:last-child'); // El último botón
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.removeItem('currentWorld');
             
             alert('Sesión cerrada correctamente. ¡Vuelve pronto!');
-            window.location.href = 'inicio.html'; 
+            window.location.href = 'index.html'; 
         });
     }
 });
