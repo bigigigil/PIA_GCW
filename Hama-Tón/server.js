@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const { join } = require('node:path');
 const { registerUser, findUser, updateUserSeeds, getLeaderboard, getUserById } = require('./database');
 const app = express();
+const path = require('path');
 
 app.use(express.urlencoded({ extended: true })); 
 app.use(express.json());
@@ -11,15 +12,16 @@ app.use(express.json());
 const server = createServer(app);
 const io = new Server(server); 
 
-// Mapa para rastrear la información completa (incluyendo en qué mundo está)
-const userSocketMap = new Map(); // Mapea userId -> { socketId, username, world }
-const socketUserMap = new Map(); // Mapea socketId -> userId
+const userSocketMap = new Map();
+const socketUserMap = new Map();
 
 app.get('/', (req, res) => {
   res.sendFile(join(__dirname, 'index.html'));
 });
 
-app.use(express.static(__dirname));
+
+app.use(express.static(path.join(__dirname, '.'))); 
+
 
 app.post('/login', async (req, res) => {
     const { usuario, password } = req.body;
